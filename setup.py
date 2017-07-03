@@ -1,11 +1,10 @@
-from distutils.core import setup
-
+from setuptools import setup, find_packages
 from django_docker_helpers import __version__
 
 setup(
     name='django-docker-helpers',
     version=__version__,
-    packages=['django_docker_helpers'],
+    packages=find_packages(),
     url='https://github.com/night-crawler/django-docker-helpers',
     license='MIT',
     author='night-crawler',
