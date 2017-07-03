@@ -1,3 +1,9 @@
+Installation
+------------
+.. code:: bash
+    pip install django-docker-helpers
+
+
 Sample
 ------
 
