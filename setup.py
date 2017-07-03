@@ -1,6 +1,9 @@
 from setuptools import setup, find_packages
 from django_docker_helpers import __version__
 
+with open('README.rst', 'r') as f:
+    long_description = f.read()
+
 setup(
     name='django-docker-helpers',
     version=__version__,
@@ -10,7 +13,7 @@ setup(
     author='night-crawler',
     author_email='lilo.panic@gmail.com',
     description='Django Docker helpers',
-
+    long_description=long_description,
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
