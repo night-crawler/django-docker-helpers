@@ -1,4 +1,5 @@
 from distutils.core import setup
+
 from django_docker_helpers import __version__
 
 setup(
@@ -20,4 +21,5 @@ setup(
         'Programming Language :: Python :: 3.5',
         'License :: OSI Approved :: MIT License',
     ],
+    requires=['pyaml', 'gunicorn']
 )

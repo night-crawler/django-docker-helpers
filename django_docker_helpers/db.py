@@ -1,11 +1,12 @@
 import os
-
-from django.db import OperationalError, connections
-from django.conf import settings
 from time import sleep
-from django.core.management import execute_from_command_line
-from django_docker_helpers.utils import wf
+
+from django.conf import settings
 from django.core.cache import caches
+from django.core.management import execute_from_command_line
+from django.db import OperationalError, connections
+
+from django_docker_helpers.utils import wf
 
 
 # ENV variables used to prevent running init code twice for runserver command

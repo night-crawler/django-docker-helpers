@@ -1,17 +1,17 @@
-import sys
 import os
+import sys
 import typing as t
 
 from yaml import load
 
 
-def dotkey(obj, dottedpath: str, default=None):
+def dotkey(obj, dot_path: str, default=None):
     val = obj
     sentinel = object()
-    if '.' not in dottedpath:
-        return obj.get(dottedpath, default)
+    if '.' not in dot_path:
+        return obj.get(dot_path, default)
 
-    for path_item in dottedpath.split('.'):
+    for path_item in dot_path.split('.'):
         if not hasattr(val, 'get'):
             return default
         val = val.get(path_item, sentinel)

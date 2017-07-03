@@ -1,9 +1,11 @@
 import os
-from gunicorn.app.base import Application
+
 from django.core.handlers.wsgi import WSGIHandler
 from django.core.management import execute_from_command_line
+from gunicorn.app.base import Application
 
 from django_docker_helpers.utils import dotkey, wf
+
 
 # ENV variables used to prevent running init code twice for runserver command
 # (https://stackoverflow.com/questions/16546652/why-does-django-run-everything-twice)
