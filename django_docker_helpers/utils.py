@@ -21,7 +21,7 @@ def dotkey(obj, dot_path: str, default=None):
 
 
 def get_env_var(project_name: str, dotpath: str) -> str:
-    return '__'.join([project_name] + dotpath.upper().split('.'))
+    return '__'.join(filter(None, [project_name] + dotpath.upper().split('.')))
 
 
 def load_yaml_config(project_name: str, filename: str) -> t.Tuple[dict, t.Callable]:
