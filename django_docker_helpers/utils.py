@@ -20,7 +20,7 @@ def dotkey(obj, dot_path: str, default=None):
     return val
 
 
-def get_env_var(project_name: str, dotpath: str) -> str:
+def get_env_var_name(project_name: str, dotpath: str) -> str:
     return '__'.join(filter(None, [project_name] + dotpath.upper().split('.')))
 
 
@@ -29,7 +29,7 @@ def load_yaml_config(project_name: str, filename: str) -> t.Tuple[dict, t.Callab
     sentinel = object()
 
     def configure(key_name: str, default=None):
-        val = os.environ.get(get_env_var(project_name, key_name), sentinel)
+        val = os.environ.get(get_env_var_name(project_name, key_name), sentinel)
         if val is sentinel:
             val = dotkey(config_dict, key_name, sentinel)
         if val is sentinel:
