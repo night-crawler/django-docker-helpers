@@ -1,7 +1,8 @@
 Installation
 ------------
 .. code:: bash
-    pip install django-docker-helpers
+
+    pip install -e git+https://github.com/night-crawler/django-docker-helpers.git#egg=django-docker-helpers
 
 
 Sample
