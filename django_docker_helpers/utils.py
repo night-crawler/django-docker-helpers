@@ -28,12 +28,24 @@ def load_yaml_config(project_name: str, filename: str) -> t.Tuple[dict, t.Callab
     config_dict = load(open(filename))
     sentinel = object()
 
-    def configure(key_name: str, default=None):
+    def configure(key_name: str, default=None, coerce_type: t.Type[t.Union[bool, str, list, dict, None]]=None):
         val = os.environ.get(get_env_var_name(project_name, key_name), sentinel)
         if val is sentinel:
             val = dotkey(config_dict, key_name, sentinel)
         if val is sentinel:
             val = default
+
+        if coerce_type is not None:
+            if coerce_type == bool:
+                if val in ['0', '1', 0, 1]:
+                    val = bool(int(val))
+                if val.lower() == 'true':
+                    val = True
+                if val.lower() == 'false':
+                    val = False
+            else:
+                val = coerce_type(val)
+
         return val
 
     return config_dict, configure
