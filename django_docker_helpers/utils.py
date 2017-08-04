@@ -24,11 +24,24 @@ def get_env_var_name(project_name: str, dotpath: str) -> str:
     return '__'.join(filter(None, [project_name] + dotpath.upper().split('.')))
 
 
-def load_yaml_config(project_name: str, filename: str) -> t.Tuple[dict, t.Callable]:
+load_yaml_config_return_type = t.Tuple[
+    dict,
+    t.Callable[
+        [
+            str,
+            t.Optional[t.Any],
+            t.Optional[t.Type],
+        ],
+        t.Any
+    ]
+]
+
+
+def load_yaml_config(project_name: str, filename: str) -> load_yaml_config_return_type:
     config_dict = load(open(filename))
     sentinel = object()
 
-    def configure(key_name: str, default=None, coerce_type: t.Type[t.Union[bool, str, list, dict, None]]=None):
+    def configure(key_name: str, default=None, coerce_type: t.Type=None) -> t.Any:
         val = os.environ.get(get_env_var_name(project_name, key_name), sentinel)
         if val is sentinel:
             val = dotkey(config_dict, key_name, sentinel)
@@ -36,12 +49,12 @@ def load_yaml_config(project_name: str, filename: str) -> t.Tuple[dict, t.Callab
             val = default
 
         if coerce_type is not None:
-            if coerce_type == bool:
+            if coerce_type == bool and not isinstance(val, bool):
                 if val in ['0', '1', 0, 1]:
                     val = bool(int(val))
-                if val.lower() == 'true':
+                elif val.lower() == 'true':
                     val = True
-                if val.lower() == 'false':
+                elif val.lower() == 'false':
                     val = False
             else:
                 val = coerce_type(val)

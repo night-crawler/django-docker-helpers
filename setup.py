@@ -23,5 +23,5 @@ setup(
         'Programming Language :: Python :: 3.5',
         'License :: OSI Approved :: MIT License',
     ],
-    requires=['pyaml', 'gunicorn']
+    requires=['pyaml', 'gunicorn', 'django']
 )

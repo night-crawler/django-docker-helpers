@@ -1,0 +1,3 @@
+pyaml
+gunicorn
+django
