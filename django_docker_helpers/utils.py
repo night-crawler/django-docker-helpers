@@ -2,8 +2,6 @@ import os
 import sys
 import typing as t
 
-from yaml import load
-
 
 def dotkey(obj, dot_path: str, default=None):
     val = obj
@@ -38,6 +36,8 @@ load_yaml_config_return_type = t.Tuple[
 
 
 def load_yaml_config(project_name: str, filename: str) -> load_yaml_config_return_type:
+    from yaml import load
+    
     config_dict = load(open(filename))
     sentinel = object()
 
