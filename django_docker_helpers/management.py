@@ -1,21 +1,12 @@
-import os
-
 from django.core.handlers.wsgi import WSGIHandler
 from django.core.management import execute_from_command_line
 from gunicorn.app.base import Application
 
-from django_docker_helpers.utils import dotkey, wf
+from django_docker_helpers.utils import dotkey, wf, run_env_once
 
 
-# ENV variables used to prevent running init code twice for runserver command
-# (https://stackoverflow.com/questions/16546652/why-does-django-run-everything-twice)
-
-
+@run_env_once
 def create_admin():
-    if os.environ.get('create_admin'):
-        return
-    os.environ['create_admin'] = '1'
-
     from django.conf import settings
     wf('Creating superuser... ', False)
 

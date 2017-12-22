@@ -1,17 +1,8 @@
-import os
-
-from django_docker_helpers.utils import wf
+from django_docker_helpers.utils import wf, run_env_once
 
 
-# ENV variables used to prevent running init code twice for runserver command
-# (https://stackoverflow.com/questions/16546652/why-does-django-run-everything-twice)
-
-
+@run_env_once
 def collect_static():
-    if os.environ.get('collect_static'):
-        return
-    os.environ['collect_static'] = '1'
-
     from django.core.management import execute_from_command_line
     # from django.conf import settings
     # if not os.listdir(settings.STATIC_ROOT):

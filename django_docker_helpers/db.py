@@ -1,4 +1,3 @@
-import os
 from time import sleep
 
 from django.conf import settings
@@ -6,17 +5,11 @@ from django.core.cache import caches
 from django.core.management import execute_from_command_line
 from django.db import OperationalError, connections
 
-from django_docker_helpers.utils import wf
+from django_docker_helpers.utils import wf, run_env_once
 
 
-# ENV variables used to prevent running init code twice for runserver command
-# (https://stackoverflow.com/questions/16546652/why-does-django-run-everything-twice)
-
+@run_env_once
 def ensure_caches_alive(max_retries=100):
-    if os.environ.get('ensure_caches_alive'):
-        return
-    os.environ['ensure_caches_alive'] = '1'
-
     for cache_alias in settings.CACHES.keys():
         cache = caches[cache_alias]
         wf('Checking redis connection alive for cache `%s`... ' % cache_alias, False)
@@ -33,11 +26,8 @@ def ensure_caches_alive(max_retries=100):
             exit()
 
 
+@run_env_once
 def ensure_databases_alive(max_retries=100):
-    if os.environ.get('ensure_databases_alive'):
-        return
-    os.environ['ensure_databases_alive'] = '1'
-
     template = """
     =============================
     Checking database connection `{CONNECTION}`:
@@ -73,16 +63,14 @@ def ensure_databases_alive(max_retries=100):
             exit()
 
 
+@run_env_once
 def migrate():
-    if os.environ.get('migrate'):
-        return
-    os.environ['migrate'] = '1'
-
     wf('Applying migrations... ', False)
     execute_from_command_line(['./manage.py', 'migrate'])
     wf('[DONE]\n')
 
 
+@run_env_once
 def modeltranslation_sync_translation_fields():
     # if modeltranslation present ensure it's migrations applied too
 
