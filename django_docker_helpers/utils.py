@@ -1,69 +1,157 @@
+import importlib
 import os
 import sys
 import typing as t
-
+from decimal import Decimal
 from functools import wraps
 
+from dpath.util import get
+from yaml import dump as dump_yaml
 
-def dotkey(obj, dot_path: str, default=None):
+
+def import_from(module: str, name: str):
+    return getattr(
+        importlib.import_module(module, [name]),
+        name
+    )
+
+
+def dot_path(obj, path: str, default=None):
+    """
+    Access elements of mixed dict/object by path.
+    :param obj: object or dict
+    :param path: path to value
+    :param default: default value if chain resolve failed
+    :return: value
+    """
+    path_items = path.split('.')
     val = obj
     sentinel = object()
-    if '.' not in dot_path:
-        return obj.get(dot_path, default)
-
-    for path_item in dot_path.split('.'):
-        if not hasattr(val, 'get'):
-            return default
-        val = val.get(path_item, sentinel)
-        if val is sentinel:
-            return default
+    for item in path_items:
+        if isinstance(val, dict):
+            val = val.get(item, sentinel)
+            if val is sentinel:
+                return default
+        else:
+            val = getattr(val, item, sentinel)
+            if val is sentinel:
+                return default
     return val
 
 
-def get_env_var_name(project_name: str, dotpath: str) -> str:
-    return '__'.join(filter(None, [project_name] + dotpath.upper().split('.')))
+def dotkey(obj: dict, path: str, default=None, separator='.'):
+    """
+    :param obj: dict like {'some': {'value': 3}}
+    :param path: 'some.value'
+    :param separator: '.' | '/'
+    :param default: default for KeyError
+    :return: value or default value
+    """
+    try:
+        return get(obj, path, separator=separator)
+    except KeyError:
+        return default
 
 
-load_yaml_config_return_type = t.Tuple[
-    dict,
-    t.Callable[
-        [
-            str,
-            t.Optional[t.Any],
-            t.Optional[t.Type],
-        ],
-        t.Any
-    ]
-]
+def _materialize_dict(d: t.Dict, separator: str = '.'):
+    """
+    Traverses and transforms a given dict into a tuples of key paths and values.
+    :param d: a dict to traverse
+    :param separator: build paths with given separator
+    :return: yields tuple(materialized_path, value)
+
+    >>> list(_materialize_dict({'test': {'path': 1}, 'key': 'val'}, '.'))
+    >>> [('key', 'val'), ('test.path', 1)]
+    """
+    if not hasattr(d, 'items'):
+        raise ValueError('Cannot materialize an object with no `items()`: %s' % repr(d))
+
+    for path_prefix, v in d.items():
+        if not isinstance(v, dict):
+            yield str(path_prefix), v
+            continue
+
+        for nested_path, nested_val in _materialize_dict(v, separator=separator):
+            yield '{0}{1}{2}'.format(path_prefix, separator, nested_path), nested_val
 
 
-def load_yaml_config(project_name: str, filename: str) -> load_yaml_config_return_type:
-    from yaml import load
-    
-    config_dict = load(open(filename))
-    sentinel = object()
+def materialize_dict(d: dict, separator: str = '.') -> t.List[t.Tuple[str, t.Any]]:
+    """
+    Transforms a given dict into a sorted list of tuples of key paths and values.
+    :param d: a dict to materialize
+    :param separator: build paths with given separator
+    :return: a depth descending and alphabetically ascending sorted list (-deep, asc), longest first
 
-    def configure(key_name: str, default=None, coerce_type: t.Type=None) -> t.Any:
-        val = os.environ.get(get_env_var_name(project_name, key_name), sentinel)
-        if val is sentinel:
-            val = dotkey(config_dict, key_name, sentinel)
-        if val is sentinel:
-            val = default
+    >>> sample = {
+    >>>     'a': 1,
+    >>>     'aa': 1,
+    >>>     'b': {
+    >>>         'c': 1,
+    >>>         'b': 1,
+    >>>         'a': 1,
+    >>>         'aa': 1,
+    >>>         'aaa': {
+    >>>             'a': 1
+    >>>         }
+    >>>     }
+    >>> }
+    >>> materialize_dict(sample, '/')
+    >>> [
+    >>>     ('b/aaa/a', 1),
+    >>>     ('b/a', 1),
+    >>>     ('b/aa', 1),
+    >>>     ('b/b', 1),
+    >>>     ('b/c', 1),
+    >>>     ('a', 1),
+    >>>     ('aa', 1)
+    >>> ]
+    """
 
-        if coerce_type is not None:
-            if coerce_type == bool and not isinstance(val, bool):
-                if val in ['0', '1', 0, 1]:
-                    val = bool(int(val))
-                elif val.lower() == 'true':
-                    val = True
-                elif val.lower() == 'false':
-                    val = False
-            else:
-                val = coerce_type(val)
+    def _matkeysort(tup: t.Tuple[str, t.Any]):
+        return len(tup[0].split(separator))
 
-        return val
+    s1 = sorted(_materialize_dict(d, separator=separator), key=lambda x: x[0])
+    return sorted(s1, key=_matkeysort, reverse=True)
 
-    return config_dict, configure
+
+def mp_serialize_dict(
+        d: dict,
+        separator: str = '.',
+        serialize: t.Optional[t.Callable] = dump_yaml,
+        value_prefix: str = '::YAML::\n') -> t.List[t.Tuple[str, bytes]]:
+    """
+    :param d: dict to materialize
+    :param separator: build paths with given separator
+    :param serialize: method to serialize non-basic types, default is yaml.dump
+    :param value_prefix: prefix for non-basic serialized types
+    :return: list of tuples (mat_path, b'value')
+    """
+
+    md = materialize_dict(d, separator=separator)
+    res = []
+    for path, value in md:
+        # have to serialize values (value should be None or a string / binary data)
+        if value is None:
+            pass
+        elif isinstance(value, str) and value != '':
+            # check for value != '' used to armor empty string with forced serialization
+            # since it can be not recognized by a storage backend
+            pass
+        elif isinstance(value, bytes):
+            pass
+        elif isinstance(value, bool):
+            value = str(value).lower()
+        elif isinstance(value, (int, float, Decimal)):
+            value = str(value)
+        else:
+            value = (value_prefix + serialize(value))
+
+        if isinstance(value, str):
+            value = value.encode()
+
+        res.append((path, value))
+
+    return res
 
 
 def wf(raw_str, flush=True, prevent_completion_polluting=True):
@@ -80,20 +168,16 @@ def wf(raw_str, flush=True, prevent_completion_polluting=True):
     flush and sys.stdout.flush()
 
 
-def env_bool_flag(flag_name: str, strict: bool = False) -> bool:
+def coerce_str_to_bool(val: t.Union[str, int, bool, None], strict: bool = False) -> bool:
     """
-    Environment boolean checker. Empty string (presence in env) is treat as True.
-
-    :param flag_name: 'dockerized'
-    :param strict: raise Exception if got anything except ['', 0, 1, true, false]
+    :param val: ['', 0, 1, true, false, True, False]
+    :param strict: raise Exception if got anything except ['', 0, 1, true, false, True, False]
     :return: True | False
     """
-    sentinel = object()
-    val = os.environ.get(flag_name, sentinel)
+    if isinstance(val, bool):
+        return val
 
-    if val is sentinel:
-        return False
-
+    # flag is set
     if val == '':
         return True
 
@@ -109,9 +193,27 @@ def env_bool_flag(flag_name: str, strict: bool = False) -> bool:
         return False
 
     if strict:
-        raise ValueError('Unsupported value for boolean ENV flag: `%s`' % val)
+        raise ValueError('Unsupported value for boolean flag: `%s`' % val)
 
     return bool(val)
+
+
+def env_bool_flag(flag_name: str, strict: bool = False, env: t.Dict = os.environ) -> bool:
+    """
+    Environment boolean checker. Empty string (presence in env) is treat as True.
+
+    :param flag_name: 'dockerized'
+    :param strict: raise Exception if got anything except ['', 0, 1, true, false]
+    :param env: dict-alike object, ``os.environ`` by default
+    :return: True | False
+    """
+    sentinel = object()
+    val = env.get(flag_name, sentinel)
+
+    if val is sentinel:
+        return False
+
+    return coerce_str_to_bool(val, strict=strict)
 
 
 def run_env_once(f):
@@ -119,6 +221,7 @@ def run_env_once(f):
     ENV variables used to prevent running init code twice for manage.py command
     (https://stackoverflow.com/questions/16546652/why-does-django-run-everything-twice)
     """
+
     @wraps(f)
     def wrapper(*args, **kwargs):
         has_run = os.environ.get(wrapper.__name__)
@@ -127,6 +230,7 @@ def run_env_once(f):
         result = f(*args, **kwargs)
         os.environ[wrapper.__name__] = '1'
         return result
+
     return wrapper
 
 
@@ -136,4 +240,3 @@ def is_dockerized(flag_name: str = 'DOCKERIZED', strict: bool = False):
 
 def is_production(flag_name: str = 'PRODUCTION', strict: bool = False):
     return env_bool_flag(flag_name, strict=strict)
-

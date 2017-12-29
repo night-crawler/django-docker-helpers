@@ -1,3 +1,6 @@
 pyaml
 gunicorn
 django
+dpath
+python-consul
+redis

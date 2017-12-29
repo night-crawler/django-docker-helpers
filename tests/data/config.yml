@@ -1,0 +1,34 @@
+debug: true
+
+my:
+  deep:
+    nested:
+      variable: 1
+
+
+development:
+  list_of_dicts:
+    - b_first: 1
+      b_second: 2
+    - b1: 1
+      b2: 2
+
+  up:
+    down:
+      above:
+        - 1
+        - 2
+        - 3
+
+project:
+  a: 1
+  name: 'wroom-wroom'
+  type: app
+  description:
+    name: 'something'
+    aname: 'smth'
+
+hosts:
+  - localhost
+  - 127.0.0.1
+

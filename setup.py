@@ -1,8 +1,13 @@
 from setuptools import setup, find_packages
+
 from django_docker_helpers import __version__
 
-with open('README.rst', 'r') as f:
-    long_description = f.read()
+try:
+    import pypandoc
+
+    long_description = pypandoc.convert('README.md', 'rst')
+except (IOError, ImportError):
+    long_description = ''
 
 setup(
     name='django-docker-helpers',
@@ -23,5 +28,5 @@ setup(
         'Programming Language :: Python :: 3.5',
         'License :: OSI Approved :: MIT License',
     ],
-    requires=['pyaml', 'gunicorn', 'django']
+    requires=['dpath', 'pyaml', 'gunicorn', 'django']
 )
