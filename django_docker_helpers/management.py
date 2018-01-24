@@ -1,6 +1,5 @@
 from django.core.handlers.wsgi import WSGIHandler
 from django.core.management import execute_from_command_line
-from gunicorn.app.base import Application
 
 from django_docker_helpers.utils import wf, run_env_once, dot_path
 
@@ -46,6 +45,8 @@ def create_admin(user_config_path: str = 'CONFIG.superuser') -> bool:
 
 
 def run_gunicorn(application: WSGIHandler, gunicorn_module_name: str = 'gunicorn_prod'):
+    from gunicorn.app.base import Application
+
     class DjangoApplication(Application):
         def init(self, parser, opts, args):
             cfg = self.get_config_from_module_name(gunicorn_module_name)
