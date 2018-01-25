@@ -21,6 +21,12 @@ class EnvironmentParser(BaseParser):
         self.config = None
         self.scope = (scope or '').upper()
 
+    def __str__(self):
+        return '<{0} scope={1}>'.format(
+            self.__class__.__name__,
+            self.scope
+        )
+
     def get_client(self):
         raise NotImplementedError
 

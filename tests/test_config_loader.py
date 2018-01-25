@@ -170,3 +170,24 @@ class ConfigLoaderTest:
         }
         res = ConfigLoader.load_parser_options_from_env(EnvironmentParser, env)
         assert res == {'scope': 'deep'}
+
+    def test__config_read_queue(self,
+                                loader: ConfigLoader,
+                                store_mpt_consul_config,
+                                store_mpt_redis_config,
+                                store_consul_config,
+                                store_redis_config):
+        loader.get('some.variable')
+        loader.get('some.brutal')
+        loader.get('debug')
+        loader.get('i.am.redis')
+        loader.get('variable')
+        loader.get('name')
+        loader.get('nothing.here', 'very long string lol')
+        loader.get('secret')
+
+        assert loader.config_read_queue
+        assert '\033' in ''.join(loader.format_config_read_queue(color=True))
+        assert '\033' not in ''.join(loader.format_config_read_queue(color=False))
+
+        loader.print_config_read_queue(color=True)

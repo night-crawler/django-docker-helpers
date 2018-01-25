@@ -28,6 +28,13 @@ class MPTConsulParser(BaseParser):
             'cert': cert,
         }
 
+    def __str__(self):
+        return '<{0} {1[scheme]}://{1[host]}:{1[port]} scope={2}>'.format(
+            self.__class__.__name__,
+            self.client_options,
+            self.scope,
+        )
+
     def get_client(self):
         # type: () -> consul.Consul
         import consul

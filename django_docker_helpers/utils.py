@@ -8,6 +8,31 @@ from functools import wraps
 from dpath.util import get
 from yaml import dump as dump_yaml
 
+SHRED_DATA_FIELD_NAMES = (
+    'password',
+    'secret',
+    'pass',
+    'pwd',
+    'key',
+    'token',
+    'auth',
+    'cred',
+)
+
+
+def shred(key_name: str, value):
+    key_name = key_name.lower()
+    need_shred = False
+    for data_field_name in SHRED_DATA_FIELD_NAMES:
+        if data_field_name in key_name:
+            need_shred = True
+            break
+
+    if not need_shred:
+        return value
+
+    return '*' * len(str(value))
+
 
 def import_from(module: str, name: str):
     return getattr(

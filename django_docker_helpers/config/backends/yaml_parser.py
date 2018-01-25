@@ -16,6 +16,13 @@ class YamlParser(BaseParser):
         if not config:
             raise ValueError('Config should not be empty')
 
+    def __str__(self):
+        return '<{0} config="{1}" scope={2}>'.format(
+            self.__class__.__name__,
+            self.config if isinstance(self.config, str) else 'TextIO',
+            self.scope,
+        )
+
     @property
     def data(self):
         if self._data is not None:

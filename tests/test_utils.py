@@ -172,3 +172,7 @@ class UtilsTest:
         assert utils.dot_path(o, 'final.nested.my_dict.a.b') == 1
         assert utils.dot_path(o, 'final.lol.qwe', 'my_default') == 'my_default'
         assert utils.dot_path(o, 'final.nested.my_dict.a.qwe', 'my_default') == 'my_default'
+
+    def test__shred(self):
+        assert utils.shred('password', '1234') == '****'
+        assert utils.shred('qwerty', '1234') == '1234'

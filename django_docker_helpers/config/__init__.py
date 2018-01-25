@@ -2,8 +2,9 @@ import inspect
 import logging
 import os
 import typing as t
+from collections import deque, namedtuple
 
-from django_docker_helpers.utils import import_from
+from django_docker_helpers.utils import import_from, shred, wf
 from .backends import *
 
 DEFAULT_PARSER_MODULE_PATH = 'django_docker_helpers.config.backends'
@@ -22,13 +23,77 @@ def comma_str_to_list(raw_val: str) -> t.List[str]:
     return list(filter(None, raw_val.split(',')))
 
 
+ConfigReadItem = namedtuple('ConfigReadItem', ['parser_name', 'variable_path', 'value', 'is_default'])
+
+
 class ConfigLoader:
-    def __init__(self, parsers: t.List[BaseParser], silent: bool = False, suppress_logs: bool = False):
+    def __init__(self,
+                 parsers: t.List[BaseParser],
+                 silent: bool = False,
+                 suppress_logs: bool = False,
+                 keep_read_records_max: int = 1024):
         self.parsers = parsers
         self.silent = silent
         self.suppress_logs = suppress_logs
         self.sentinel = object()
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.config_read_queue = deque(maxlen=keep_read_records_max)
+
+        self.colors_map = {
+            'color_parser_name': '\033[0;33m',
+            'color_variable_path': '\033[94m',
+            'color_value': '\033[32m',
+            'uncolor': '\033[0m',
+        }
+
+    def enqueue(self,
+                variable_path: str,
+                parser: t.Optional[BaseParser] = None,
+                value: t.Any = None):
+        self.config_read_queue.append(ConfigReadItem(
+            str(parser),
+            variable_path,
+            shred(variable_path, value),
+            not bool(parser),
+        ))
+
+    def print_config_read_queue(self, color=False):
+        wf('\n'.join(self.format_config_read_queue(color=color)))
+
+    def format_config_read_queue(self, color=False):
+        screen_options = dict.fromkeys(ConfigReadItem._fields, 0)
+        if color:
+            screen_options.update(self.colors_map)
+        else:
+            screen_options.update(dict.fromkeys(self.colors_map.keys(), ''))
+
+        # find max length for every item
+        for config_read_item in self.config_read_queue:
+            for k, v in config_read_item._asdict().items():
+                _len = len(str(v))
+                if screen_options[k] < _len:
+                    screen_options[k] = _len
+
+        # default asterisk sign
+        screen_options['value'] += 1
+
+        template_parts = [
+            '%(color_variable_path)s {0[variable_path]:>%(variable_path)s} %(uncolor)s',
+            '=%(color_value)s {0[value]:<%(value)s} %(uncolor)s',
+            '%(color_parser_name)s {0[parser_name]:<%(parser_name)s} %(uncolor)s'
+        ]
+
+        template = ''.join(template_parts) % screen_options
+
+        res = []
+        for config_read_item in self.config_read_queue:
+            _option_log_item_dict = {k: str(v) for k, v in config_read_item._asdict().items()}
+
+            if config_read_item.is_default:
+                _option_log_item_dict['value'] += '*'
+
+            res.append(template.format(_option_log_item_dict))
+        return res
 
     def get(self,
             variable_path: str,
@@ -45,6 +110,7 @@ class ConfigLoader:
                     **kwargs
                 )
                 if val != self.sentinel:
+                    self.enqueue(variable_path, p, val)
                     return val
             except Exception as e:
                 if not self.silent:
@@ -57,6 +123,7 @@ class ConfigLoader:
                     str(e)
                 ))
 
+        self.enqueue(variable_path, value=default)
         return default
 
     @staticmethod
