@@ -129,7 +129,7 @@ class ConfigLoaderTest:
 
     def test__from_env(self):
         env = {
-            'CONFIG_PARSERS': 'EnvironmentParser,RedisParser,YamlParser',
+            'CONFIG__PARSERS': 'EnvironmentParser,RedisParser,YamlParser',
             'ENVIRONMENTPARSER__SCOPE': 'nested',
             'YAMLPARSER__CONFIG': './tests/data/config.yml',
             'REDISPARSER__HOST': 'wtf.test',
@@ -137,6 +137,7 @@ class ConfigLoaderTest:
         }
 
         loader = ConfigLoader.from_env(env=env)
+        assert [type(p) for p in loader.parsers] == [EnvironmentParser, RedisParser, YamlParser]
         assert loader.get('variable') == 'i_am_here', 'Ensure env copied from ConfigLoader'
 
         with pytest.raises(Exception):

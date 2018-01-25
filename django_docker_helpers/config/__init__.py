@@ -149,7 +149,7 @@ class ConfigLoader:
                                      env: t.Dict[str, str] = os.environ):
         sentinel = object()
         spec: inspect.FullArgSpec = inspect.getfullargspec(parser_class.__init__)
-        e = EnvironmentParser(scope=parser_class.__name__.upper(), env=env)
+        environment_parser = EnvironmentParser(scope=parser_class.__name__.upper(), env=env)
 
         stop_args = ['self']
         safe_types = [int, bool, str]
@@ -178,7 +178,7 @@ class ConfigLoader:
                     except ValueError:
                         pass
 
-            val = e.get(arg_name, sentinel, coerce_type=coerce_type)
+            val = environment_parser.get(arg_name, sentinel, coerce_type=coerce_type)
             if val is sentinel:
                 continue
 
@@ -193,11 +193,13 @@ class ConfigLoader:
                  suppress_logs: bool = False,
                  extra: t.Optional[dict] = None):
         extra = extra or {}
-        e = EnvironmentParser(env=env)
+        environment_parser = EnvironmentParser(scope='config', env=env)
+        silent = environment_parser.get('silent', silent, coerce_type=bool)
+        suppress_logs = environment_parser.get('suppress_logs', suppress_logs, coerce_type=bool)
 
-        env_parsers = e.get('CONFIG_PARSERS', None, coercer=comma_str_to_list)
+        env_parsers = environment_parser.get('parsers', None, coercer=comma_str_to_list)
         if not env_parsers and not parser_modules:
-            raise ValueError('Must specify `CONFIG_PARSERS` env var or `parser_modules`')
+            raise ValueError('Must specify `CONFIG__PARSERS` env var or `parser_modules`')
 
         if env_parsers:
             parser_classes = ConfigLoader.import_parsers(env_parsers)
