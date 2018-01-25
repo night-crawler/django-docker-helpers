@@ -62,10 +62,6 @@ class ConfigLoader:
 
     def format_config_read_queue(self, color=False):
         screen_options = dict.fromkeys(ConfigReadItem._fields, 0)
-        if color:
-            screen_options.update(self.colors_map)
-        else:
-            screen_options.update(dict.fromkeys(self.colors_map.keys(), ''))
 
         # find max length for every item
         for config_read_item in self.config_read_queue:
@@ -74,8 +70,14 @@ class ConfigLoader:
                 if screen_options[k] < _len:
                     screen_options[k] = _len
 
-        # default asterisk sign
+        # add space for default asterisk sign
         screen_options['value'] += 1
+        max_length = sum(screen_options.values())
+
+        if color:
+            screen_options.update(self.colors_map)
+        else:
+            screen_options.update(dict.fromkeys(self.colors_map.keys(), ''))
 
         template_parts = [
             '%(color_variable_path)s {0[variable_path]:>%(variable_path)s} %(uncolor)s',
@@ -85,7 +87,7 @@ class ConfigLoader:
 
         template = ''.join(template_parts) % screen_options
 
-        res = []
+        res = ['CONFIG READ QUEUE'.center(max_length + 3, '=')]
         for config_read_item in self.config_read_queue:
             _option_log_item_dict = {k: str(v) for k, v in config_read_item._asdict().items()}
 
@@ -93,6 +95,8 @@ class ConfigLoader:
                 _option_log_item_dict['value'] += '*'
 
             res.append(template.format(_option_log_item_dict))
+        res.append('=' * (max_length + 3))
+
         return res
 
     def get(self,
