@@ -4,7 +4,7 @@ import os
 import typing as t
 from collections import deque, namedtuple
 
-from django_docker_helpers.utils import import_from, shred, wf
+from django_docker_helpers.utils import import_from, shred, wf, run_env_once
 from .backends import *
 
 DEFAULT_PARSER_MODULE_PATH = 'django_docker_helpers.config.backends'
@@ -57,8 +57,10 @@ class ConfigLoader:
             not bool(parser),
         ))
 
+    @run_env_once
     def print_config_read_queue(self, color=False):
         wf('\n'.join(self.format_config_read_queue(color=color)))
+        wf('\n')
 
     def format_config_read_queue(self, color=False):
         screen_options = dict.fromkeys(ConfigReadItem._fields, 0)
