@@ -46,6 +46,16 @@ class ConfigLoader:
             'uncolor': '\033[0m',
         }
 
+    # useful shortcut
+    def __call__(self, variable_path: str,
+                 default: t.Optional[t.Any] = None,
+                 coerce_type: t.Optional[t.Type] = None,
+                 coercer: t.Optional[t.Callable] = None,
+                 **kwargs):
+        return self.get(variable_path, default=default,
+                        coerce_type=coerce_type, coercer=coercer,
+                        **kwargs)
+
     def enqueue(self,
                 variable_path: str,
                 parser: t.Optional[BaseParser] = None,
