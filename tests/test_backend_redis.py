@@ -1,10 +1,14 @@
 import os
 
+# noinspection PyPackageRequirements
 import pytest
+# noinspection PyPackageRequirements
 from yaml import dump as yaml_dump
 
 from django_docker_helpers.config import exceptions
 from django_docker_helpers.config.backends.redis_parser import RedisParser
+
+pytestmark = [pytest.mark.backend, pytest.mark.redis]
 
 REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
 REDIS_PORT = os.getenv('REDIS_PORT', 6379)
@@ -49,11 +53,11 @@ class RedisBackendTest:
         assert redis_parser.inner_parser
 
     def test__redis_parser__inner_parser__exceptions(self, store_redis_config):
-        with pytest.raises(exceptions.KVEmptyValue):
+        with pytest.raises(exceptions.KVStorageValueDoestNotExist):
             c = RedisParser('nothing/here', host=REDIS_HOST, port=REDIS_PORT)
             assert c.inner_parser
 
-        with pytest.raises(exceptions.KVEmptyValue):
+        with pytest.raises(exceptions.KVStorageValueDoestNotExist):
             c = RedisParser('my/server/empty.yml', host=REDIS_HOST, port=REDIS_PORT)
             assert c.inner_parser
 

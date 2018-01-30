@@ -6,14 +6,13 @@ pip install django-docker-helpers
 ```
 
 ### Utils
-- `load_yaml_config(project_name: str, filename: str)` - loads config from specified YAML file. Returns dict bundle from YAML and `configure(key, default, coerce)` function to get config vars from YAML or ENV
 - `env_bool_flag(flag_name, strict)` - check if ENV option specified, is it set to true, 1, 0, etc.
 - `run_env_once` ensure django management don't call `twice <https://stackoverflow.com/questions/16546652/why-does-django-run-everything-twice>`_
 - `is_dockerized` - reads `DOCKERIZED` flag from env
 - `is_production` - reads `PRODUCTION` flag from env
 
 
-### Helper functions
+### Management Helper functions
 - `ensure_databases_alive(max_retries=100)` - tries to execute `SELECT 1` for every specified database alias in `DATABASES` until success or max_retries reached
 - `ensure_caches_alive(max_retries=100)` - tries to execute `SELECT 1` for every specified cache alias in `CACHES` until success or max_retries reached
 - `migrate` - executes `./manage.py migrate`
@@ -39,15 +38,19 @@ debug: true
 ### Read config
 ```python
 import os
-from django_docker_helpers.utils import load_yaml_config
+from django_docker_helpers.config import ConfigLoader, EnvironmentParser, RedisParser, YamlParser
 
-CONFIG, configure = load_yaml_config(
-    '',  # prefix
-    os.path.join(
-        BASE_DIR, 'project', 'config',
-        os.environ.get('DJANGO_CONFIG_FILE_NAME', 'without-docker.yml')
-    )
-)
+yml_conf = os.('/tmp/my/config/without-docker.yml')
+redis_conf = os.environ.get('DJANGO_CONFIG_REDIS_KEY', 'marfa_msa_cas/conf.yml')
+
+parsers = [
+    EnvironmentParser(),
+    RedisParser(endpoint=redis_conf),
+    YamlParser(config=yml_conf),
+]
+configure = ConfigLoader(parsers=parsers, silent=True)
+
+
 
 DATABASES = {
     'default': {
@@ -104,3 +107,9 @@ if __name__ == '__main__':
         execute_from_command_line(sys.argv)
 
 ```
+
+### Testing
+1. `$ pip install -r requirements/dev.txt`
+2. [Download Consul](https://www.consul.io/downloads.html) and unzip it into the project's directory.
+3. `$ ./consulagent -server -ui -dev`
+4. `$ pytest`

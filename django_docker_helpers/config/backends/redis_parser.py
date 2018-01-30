@@ -2,7 +2,7 @@ import io
 import typing as t
 
 from django_docker_helpers.config.backends.base import BaseParser
-from django_docker_helpers.config.exceptions import KVEmptyValue
+from django_docker_helpers.config.exceptions import KVStorageValueDoestNotExist
 from .yaml_parser import YamlParser
 
 
@@ -48,7 +48,7 @@ class RedisParser(BaseParser):
 
         config = self.client.get(self.endpoint)
         if not config:
-            raise KVEmptyValue('Key `{0}` does not exist or value is empty'.format(self.endpoint))
+            raise KVStorageValueDoestNotExist('Key `{0}` does not exist or value is empty'.format(self.endpoint))
 
         config = config.decode()
 

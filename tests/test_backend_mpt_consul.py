@@ -1,9 +1,12 @@
 import os
 
+# noinspection PyPackageRequirements
 import pytest
 
 from django_docker_helpers.config.backends.mpt_consul_parser import MPTConsulParser
 from django_docker_helpers.utils import mp_serialize_dict
+
+pytestmark = [pytest.mark.backend, pytest.mark.consul]
 
 CONSUL_HOST = os.getenv('CONSUL_HOST', '127.0.0.1')
 CONSUL_PORT = os.getenv('CONSUL_PORT', 8500)

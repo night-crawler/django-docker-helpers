@@ -1,2 +1,7 @@
 -r ./base.txt
+
+pyaml
 pypandoc
+pytest
+pytest-django
+python-memcached

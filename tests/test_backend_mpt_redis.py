@@ -1,9 +1,12 @@
 import os
 
+# noinspection PyPackageRequirements
 import pytest
 
 from django_docker_helpers.config.backends.mpt_redis_parser import MPTRedisParser
 from django_docker_helpers.utils import mp_serialize_dict
+
+pytestmark = [pytest.mark.backend, pytest.mark.redis]
 
 REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
 REDIS_PORT = os.getenv('REDIS_PORT', 6379)

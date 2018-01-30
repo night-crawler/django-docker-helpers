@@ -2,7 +2,7 @@ import io
 import typing as t
 
 from django_docker_helpers.config.backends.base import BaseParser
-from django_docker_helpers.config.exceptions import KVEmptyValue, KVKeyDoesNotExist
+from django_docker_helpers.config.exceptions import KVStorageValueDoestNotExist, KVStorageKeyDoestNotExist
 from .yaml_parser import YamlParser
 
 
@@ -55,11 +55,11 @@ class ConsulParser(BaseParser):
 
         __index, response_config = self.client.kv.get(self.endpoint, **self.kv_get_opts)
         if not response_config:
-            raise KVKeyDoesNotExist('Key does not exist: `{0}`'.format(self.endpoint))
+            raise KVStorageKeyDoestNotExist('Key does not exist: `{0}`'.format(self.endpoint))
 
         config = response_config['Value']
         if not config or config is self.sentinel:
-            raise KVEmptyValue('Read empty config by key `{0}`'.format(self.endpoint))
+            raise KVStorageValueDoestNotExist('Read empty config by key `{0}`'.format(self.endpoint))
 
         config = config.decode()
 

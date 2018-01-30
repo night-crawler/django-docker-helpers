@@ -5,6 +5,7 @@ import typing as t
 from collections import deque, namedtuple
 
 from django_docker_helpers.utils import import_from, shred, wf, run_env_once
+from . import exceptions
 from .backends import *
 
 DEFAULT_PARSER_MODULE_PATH = 'django_docker_helpers.config.backends'
@@ -52,9 +53,7 @@ class ConfigLoader:
                  coerce_type: t.Optional[t.Type] = None,
                  coercer: t.Optional[t.Callable] = None,
                  **kwargs):
-        return self.get(variable_path, default=default,
-                        coerce_type=coerce_type, coercer=coercer,
-                        **kwargs)
+        return self.get(variable_path, default=default, coerce_type=coerce_type, coercer=coercer, **kwargs)
 
     def enqueue(self,
                 variable_path: str,
@@ -111,11 +110,13 @@ class ConfigLoader:
 
         return res
 
+    # TODO: add required argument (if required == True and variable is not defined - raise an exception)
     def get(self,
             variable_path: str,
             default: t.Optional[t.Any] = None,
             coerce_type: t.Optional[t.Type] = None,
             coercer: t.Optional[t.Callable] = None,
+            required: bool = False,
             **kwargs):
 
         for p in self.parsers:
@@ -140,6 +141,11 @@ class ConfigLoader:
                 ))
 
         self.enqueue(variable_path, value=default)
+
+        if not default and required:
+            raise exceptions.RequiredValueIsEmpty(
+                'No default provided and no value read for `{0}`'.format(variable_path))
+
         return default
 
     @staticmethod
