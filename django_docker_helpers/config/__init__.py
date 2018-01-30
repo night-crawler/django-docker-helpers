@@ -52,9 +52,7 @@ class ConfigLoader:
                  coerce_type: t.Optional[t.Type] = None,
                  coercer: t.Optional[t.Callable] = None,
                  **kwargs):
-        return self.get(variable_path, default=default,
-                        coerce_type=coerce_type, coercer=coercer,
-                        **kwargs)
+        return self.get(variable_path, default=default, coerce_type=coerce_type, coercer=coercer, **kwargs)
 
     def enqueue(self,
                 variable_path: str,
@@ -111,6 +109,7 @@ class ConfigLoader:
 
         return res
 
+    # TODO: add required argument (if required == True and variable is not defined - raise an exception)
     def get(self,
             variable_path: str,
             default: t.Optional[t.Any] = None,
