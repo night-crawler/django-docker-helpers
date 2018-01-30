@@ -1,5 +1,6 @@
 import os
 
+# noinspection PyPackageRequirements
 import pytest
 
 from django_docker_helpers.config import ConfigLoader

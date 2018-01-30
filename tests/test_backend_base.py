@@ -1,3 +1,4 @@
+# noinspection PyPackageRequirements
 import pytest
 
 from django_docker_helpers.config.backends import BaseParser

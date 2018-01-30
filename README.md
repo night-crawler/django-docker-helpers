@@ -104,3 +104,9 @@ if __name__ == '__main__':
         execute_from_command_line(sys.argv)
 
 ```
+
+### Testing
+1. `$ pip install -r requirements/dev.txt`
+2. [Download Consul](https://www.consul.io/downloads.html) and unzip it into the project's directory.
+3. `$ ./consul agent -dev -bind=127.0.0.1`
+4. `$ pytest`

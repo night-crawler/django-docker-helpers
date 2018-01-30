@@ -11,5 +11,8 @@ dist/
 *.egg-info/
 annotations.json
 monkeytype.sqlite3
-tests/test.sqlite
 tests/test_app/migrations
+
+# Files
+consul
+tests/test.sqlite
