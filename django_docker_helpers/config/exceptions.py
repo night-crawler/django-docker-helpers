@@ -1,6 +1,10 @@
-class KVKeyDoesNotExist(KeyError):
+class KVStorageKeyDoestNotExist(KeyError):
     pass
 
 
-class KVEmptyValue(ValueError):
+class KVStorageValueDoestNotExist(ValueError):
+    pass
+
+
+class RequiredValueIsEmpty(ValueError):
     pass

@@ -53,11 +53,11 @@ class RedisBackendTest:
         assert redis_parser.inner_parser
 
     def test__redis_parser__inner_parser__exceptions(self, store_redis_config):
-        with pytest.raises(exceptions.KVEmptyValue):
+        with pytest.raises(exceptions.KVStorageValueDoestNotExist):
             c = RedisParser('nothing/here', host=REDIS_HOST, port=REDIS_PORT)
             assert c.inner_parser
 
-        with pytest.raises(exceptions.KVEmptyValue):
+        with pytest.raises(exceptions.KVStorageValueDoestNotExist):
             c = RedisParser('my/server/empty.yml', host=REDIS_HOST, port=REDIS_PORT)
             assert c.inner_parser
 

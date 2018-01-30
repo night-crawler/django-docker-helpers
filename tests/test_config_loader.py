@@ -4,6 +4,7 @@ import os
 import pytest
 
 from django_docker_helpers.config import ConfigLoader
+from django_docker_helpers.config import exceptions
 from django_docker_helpers.config.backends import *
 from django_docker_helpers.utils import mp_serialize_dict
 
@@ -195,3 +196,12 @@ class ConfigLoaderTest:
         assert '\033' not in ''.join(loader.format_config_read_queue(color=False))
 
         loader.print_config_read_queue(color=True)
+
+    def test__shortcut_for_get_method(self, loader: ConfigLoader):
+        assert loader('some.variable')
+
+    def test__get_with_required(self, loader: ConfigLoader):
+        assert loader.get('some.variable', required=True)
+
+        with pytest.raises(exceptions.RequiredValueIsEmpty):
+            loader.get('some.nonexistent_var', required=True)
