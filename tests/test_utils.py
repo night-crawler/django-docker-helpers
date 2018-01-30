@@ -5,6 +5,8 @@ import pytest
 
 from django_docker_helpers import utils
 
+pytestmark = pytest.mark.utils
+
 
 # noinspection PyMethodMayBeStatic
 class UtilsTest:

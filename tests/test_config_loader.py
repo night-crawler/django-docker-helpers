@@ -7,6 +7,8 @@ from django_docker_helpers.config import ConfigLoader
 from django_docker_helpers.config.backends import *
 from django_docker_helpers.utils import mp_serialize_dict
 
+pytestmark = pytest.mark.config_loader
+
 REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
 REDIS_PORT = os.getenv('REDIS_PORT', 6379)
 

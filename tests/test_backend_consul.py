@@ -8,6 +8,8 @@ from yaml import dump as yaml_dump
 from django_docker_helpers.config import exceptions
 from django_docker_helpers.config.backends.consul_parser import ConsulParser
 
+pytestmark = [pytest.mark.backend, pytest.mark.consul]
+
 CONSUL_HOST = os.getenv('CONSUL_HOST', '127.0.0.1')
 CONSUL_PORT = os.getenv('CONSUL_PORT', 8500)
 

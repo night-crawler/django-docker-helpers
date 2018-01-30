@@ -3,6 +3,8 @@ import pytest
 
 from django_docker_helpers.config.backends import BaseParser
 
+pytestmark = [pytest.mark.backend, pytest.mark.base]
+
 
 # noinspection PyMethodMayBeStatic
 class BaseParserTest:

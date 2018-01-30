@@ -8,6 +8,8 @@ from yaml import dump as yaml_dump
 from django_docker_helpers.config import exceptions
 from django_docker_helpers.config.backends.redis_parser import RedisParser
 
+pytestmark = [pytest.mark.backend, pytest.mark.redis]
+
 REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
 REDIS_PORT = os.getenv('REDIS_PORT', 6379)
 

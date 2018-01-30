@@ -7,6 +7,8 @@ from yaml import load as yaml_load
 
 from django_docker_helpers.config.backends.environment_parser import EnvironmentParser
 
+pytestmark = [pytest.mark.backend, pytest.mark.env]
+
 
 # noinspection PyMethodMayBeStatic
 class EnvironmentBackendTest:

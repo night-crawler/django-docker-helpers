@@ -7,6 +7,8 @@ from django_docker_helpers.db import migrate, ensure_caches_alive, ensure_databa
 from django_docker_helpers.files import collect_static
 from django_docker_helpers.management import create_admin
 
+pytestmark = pytest.mark.management
+
 
 # noinspection PyMethodMayBeStatic
 class ManagementTest:
