@@ -138,7 +138,9 @@ class UtilsTest:
             ('nested/a/c', b'bytes'),
             ('bool_flag', b"::YAML::\n''\n"),
             ('debug', b'true'),
-            ('mixed', b'::YAML::\n- ascii\n- "\\u044E\\u043D\\u0438\\u043A\\u043E\\u0434"\n- 1\n- {d: 1}\n- {b: 2}\n'),
+            ('mixed', b'::YAML::\n- ascii\n- '
+                      b'"\\u044E\\u043D\\u0438\\u043A\\u043E\\u0434"\n- 1\n- '
+                      b'{d: 1}\n- {b: 2}\n'),
             ('none_value', None),
             ('unicode', b'\xd0\xb2\xd0\xb0\xd1\x81\xd1\x8f')
         ]

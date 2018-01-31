@@ -2,7 +2,6 @@ Management helpers
 ==================
 
 
-
 .. toctree::
     :maxdepth: 2
 

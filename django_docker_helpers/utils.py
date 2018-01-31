@@ -20,10 +20,20 @@ SHRED_DATA_FIELD_NAMES = (
 )
 
 
-def shred(key_name: str, value):
+def shred(key_name: str,
+          value: t.Any,
+          field_names: t.Iterable[str] = SHRED_DATA_FIELD_NAMES) -> t.Union[t.Any, str]:
+    """
+    Replaces sensitive data in ``value`` with `*` if ``key_name`` contains anything that looks like a password.
+
+    :param field_names: a list with key names that can possibly contain sensitive data
+    :param key_name: current key name being checked
+    :param value: value to mask
+    :return: unchanged value if nothing to hide, '*' * len(str(value)) otherwise
+    """
     key_name = key_name.lower()
     need_shred = False
-    for data_field_name in SHRED_DATA_FIELD_NAMES:
+    for data_field_name in field_names:
         if data_field_name in key_name:
             need_shred = True
             break
@@ -41,15 +51,38 @@ def import_from(module: str, name: str):
     )
 
 
-def dot_path(obj, path: str, default=None):
+def dot_path(obj: t.Union[t.Dict, object],
+             path: str,
+             default: t.Any = None,
+             separator: str = '.'):
     """
-    Access elements of mixed dict/object by path.
+    Access elements of mixed dict/object type by dot-separated path.
+    .. testcode::
+
+        class O1:
+            my_dict = {'a': {'b': 1}}
+
+        class O2:
+            def __init__(self):
+                self.nested = O1()
+
+        class O3:
+            final = O2()
+
+        o = O3()
+        assert utils.dot_path(o, 'final.nested.my_dict.a.b') == 1
+
+    .. testoutput::
+
+        True
+
     :param obj: object or dict
     :param path: path to value
     :param default: default value if chain resolve failed
-    :return: value
+    :param separator: ``.`` by default
+    :return: value or default
     """
-    path_items = path.split('.')
+    path_items = path.split(separator)
     val = obj
     sentinel = object()
     for item in path_items:
@@ -66,11 +99,13 @@ def dot_path(obj, path: str, default=None):
 
 def dotkey(obj: dict, path: str, default=None, separator='.'):
     """
-    :param obj: dict like {'some': {'value': 3}}
-    :param path: 'some.value'
-    :param separator: '.' | '/'
+    Provides an interface to traverse nested dict values by dot-separated paths. Wrapper for ``dpath.util.get``.
+
+    :param obj: dict like ``{'some': {'value': 3}}``
+    :param path: ``'some.value'``
+    :param separator: ``'.'`` or ``'/'`` or whatever
     :param default: default for KeyError
-    :return: value or default value
+    :return: dict value or default value
     """
     try:
         return get(obj, path, separator=separator)
@@ -78,20 +113,22 @@ def dotkey(obj: dict, path: str, default=None, separator='.'):
         return default
 
 
-def _materialize_dict(d: t.Dict, separator: str = '.'):
+def _materialize_dict(bundle: dict, separator: str = '.') -> t.Generator[t.Tuple[str, t.Any], None, None]:
     """
-    Traverses and transforms a given dict into a tuples of key paths and values.
-    :param d: a dict to traverse
+    Traverse and transform a given dict ``bundle`` into tuples of ``(key_path, value)``.
+
+    :param bundle: a dict to traverse
     :param separator: build paths with given separator
     :return: yields tuple(materialized_path, value)
 
+    Example:
     >>> list(_materialize_dict({'test': {'path': 1}, 'key': 'val'}, '.'))
     >>> [('key', 'val'), ('test.path', 1)]
     """
-    if not hasattr(d, 'items'):
-        raise ValueError('Cannot materialize an object with no `items()`: %s' % repr(d))
+    if not hasattr(bundle, 'items'):
+        raise ValueError('Cannot materialize an object with no `items()`: %s' % repr(bundle))
 
-    for path_prefix, v in d.items():
+    for path_prefix, v in bundle.items():
         if not isinstance(v, dict):
             yield str(path_prefix), v
             continue
@@ -100,59 +137,97 @@ def _materialize_dict(d: t.Dict, separator: str = '.'):
             yield '{0}{1}{2}'.format(path_prefix, separator, nested_path), nested_val
 
 
-def materialize_dict(d: dict, separator: str = '.') -> t.List[t.Tuple[str, t.Any]]:
+def materialize_dict(bundle: dict, separator: str = '.') -> t.List[t.Tuple[str, t.Any]]:
     """
-    Transforms a given dict into a sorted list of tuples of key paths and values.
-    :param d: a dict to materialize
+    Transforms a given ``bundle`` into a `sorted` list of tuples with materialized value paths and values:
+    ``('path.to.value', <value>)``. Output is ordered by depth: deepest element first.
+
+    :param bundle: a dict to materialize
     :param separator: build paths with given separator
     :return: a depth descending and alphabetically ascending sorted list (-deep, asc), longest first
 
-    >>> sample = {
-    >>>     'a': 1,
-    >>>     'aa': 1,
-    >>>     'b': {
-    >>>         'c': 1,
-    >>>         'b': 1,
-    >>>         'a': 1,
-    >>>         'aa': 1,
-    >>>         'aaa': {
-    >>>             'a': 1
-    >>>         }
-    >>>     }
-    >>> }
-    >>> materialize_dict(sample, '/')
-    >>> [
-    >>>     ('b/aaa/a', 1),
-    >>>     ('b/a', 1),
-    >>>     ('b/aa', 1),
-    >>>     ('b/b', 1),
-    >>>     ('b/c', 1),
-    >>>     ('a', 1),
-    >>>     ('aa', 1)
-    >>> ]
+    ::
+
+        sample = {
+            'a': 1,
+            'aa': 1,
+            'b': {
+                'c': 1,
+                'b': 1,
+                'a': 1,
+                'aa': 1,
+                'aaa': {
+                    'a': 1
+                }
+            }
+        }
+        materialize_dict(sample, '/')
+        [
+            ('b/aaa/a', 1),
+            ('b/a', 1),
+            ('b/aa', 1),
+            ('b/b', 1),
+            ('b/c', 1),
+            ('a', 1),
+            ('aa', 1)
+        ]
     """
 
     def _matkeysort(tup: t.Tuple[str, t.Any]):
         return len(tup[0].split(separator))
 
-    s1 = sorted(_materialize_dict(d, separator=separator), key=lambda x: x[0])
+    s1 = sorted(_materialize_dict(bundle, separator=separator), key=lambda x: x[0])
     return sorted(s1, key=_matkeysort, reverse=True)
 
 
 def mp_serialize_dict(
-        d: dict,
+        bundle: dict,
         separator: str = '.',
         serialize: t.Optional[t.Callable] = dump_yaml,
         value_prefix: str = '::YAML::\n') -> t.List[t.Tuple[str, bytes]]:
     """
-    :param d: dict to materialize
+    Transforms a given ``bundle`` into a `sorted` list of tuples with materialized value paths and values:
+    ``('path.to.value', b'value')``. If ``<value>`` is not an instance of a basic type, it's being serialized
+    with ``serialize`` callback. If value is an empty string, it's being serialized anyway to enforce correct type
+    if storage backend does not support empty string.
+
+    :param bundle: dict to materialize
     :param separator: build paths with given separator
     :param serialize: method to serialize non-basic types, default is yaml.dump
     :param value_prefix: prefix for non-basic serialized types
     :return: list of tuples (mat_path, b'value')
+
+    ::
+
+        sample = {
+            'bool_flag': '',  # flag
+            'unicode': 'вася',
+            'none_value': None,
+            'debug': True,
+            'mixed': ['ascii', 'юникод', 1, {'d': 1}, {'b': 2}],
+            'nested': {
+                'a': {
+                    'b': 2,
+                    'c': b'bytes',
+                }
+            }
+        }
+
+        result = mp_serialize_dict(sample, separator='/')
+        assert result == [
+            ('nested/a/b', b'2'),
+            ('nested/a/c', b'bytes'),
+            ('bool_flag', b"::YAML::\\n''\\n"),
+            ('debug', b'true'),
+            ('mixed', b'::YAML::\\n- ascii\\n- '
+                      b'"\\\\u044E\\\\u043D\\\\u0438\\\\u043A\\\\u043E\\\\u0434"\\n- 1\\n- '
+                      b'{d: 1}\\n- {b: 2}\\n'),
+            ('none_value', None),
+            ('unicode', b'\\xd0\\xb2\\xd0\\xb0\\xd1\\x81\\xd1\\x8f')
+        ]
     """
 
-    md = materialize_dict(d, separator=separator)
+    md = materialize_dict(bundle, separator=separator)
     res = []
     for path, value in md:
         # have to serialize values (value should be None or a string / binary data)
@@ -179,25 +254,34 @@ def mp_serialize_dict(
     return res
 
 
-def wf(raw_str, flush=True, prevent_completion_polluting=True):
+def wf(raw_str: str,
+       flush: bool = True,
+       prevent_completion_polluting: bool = True,
+       stream: t.TextIO = sys.stdout):
     """
-    :param raw_str: Raw string to print.
-    :param flush: execute sys.stdout.flush
-    :param prevent_completion_polluting: don't print anything
-    :return:
+    Writes a given ``raw_str`` into a ``stream``. Ignores output if ``prevent_completion_polluting`` is set and there's
+    no extra ``sys.argv`` arguments present (bash completion issue).
+
+    :param raw_str: raw string to print
+    :param flush: execute (sys.stdout).flush()
+    :param prevent_completion_polluting: don't write anything if ``len(sys.argv) <= 1``
+    :param stream: ``sys.stdout`` by default
+    :return: nothing
     """
     if prevent_completion_polluting and len(sys.argv) <= 1:
         return
 
-    sys.stdout.write(raw_str)
-    flush and sys.stdout.flush()
+    stream.write(raw_str)
+    flush and hasattr(stream, 'flush') and stream.flush()
 
 
 def coerce_str_to_bool(val: t.Union[str, int, bool, None], strict: bool = False) -> bool:
     """
-    :param val: ['', 0, 1, true, false, True, False]
-    :param strict: raise Exception if got anything except ['', 0, 1, true, false, True, False]
-    :return: True | False
+    Converts a given string ``val`` into a boolean.
+
+    :param val: any of ``['', 0, 1, true, false, True, False]``
+    :param strict: raise ``ValueError`` if passed anything except ``['', 0, 1, true, false, True, False]``
+    :return: ``True`` if ``val`` is thruthy, ``False`` otherwise.
     """
     if isinstance(val, bool):
         return val
@@ -223,15 +307,18 @@ def coerce_str_to_bool(val: t.Union[str, int, bool, None], strict: bool = False)
     return bool(val)
 
 
-def env_bool_flag(flag_name: str, strict: bool = False, env: t.Dict = os.environ) -> bool:
+def env_bool_flag(flag_name: str, strict: bool = False, env: t.Optional[t.Dict[str, str]] = None) -> bool:
     """
-    Environment boolean checker. Empty string (presence in env) is treat as True.
+    Converts environment variable into a boolean. Empty string (presence in env) is treated as ``True``.
 
-    :param flag_name: 'dockerized'
+    :param flag_name: environment variable name'
     :param strict: raise Exception if got anything except ['', 0, 1, true, false]
     :param env: dict-alike object, ``os.environ`` by default
-    :return: True | False
+    :return: ``True`` if ``flag_name`` is thruthy, ``False`` otherwise.
     """
+    if env is None:
+        env = os.environ
+
     sentinel = object()
     val = env.get(flag_name, sentinel)
 
@@ -241,10 +328,13 @@ def env_bool_flag(flag_name: str, strict: bool = False, env: t.Dict = os.environ
     return coerce_str_to_bool(val, strict=strict)
 
 
-def run_env_once(f):
+def run_env_once(f: t.Callable) -> t.Callable:
     """
-    ENV variables used to prevent running init code twice for manage.py command
+    A decorator to prevent ``manage.py`` from running code twice for everything.
     (https://stackoverflow.com/questions/16546652/why-does-django-run-everything-twice)
+
+    :param f: function or method to decorate
+    :return: callable
     """
 
     @wraps(f)
@@ -260,8 +350,22 @@ def run_env_once(f):
 
 
 def is_dockerized(flag_name: str = 'DOCKERIZED', strict: bool = False):
+    """
+    Reads env ``DOCKERIZED`` variable as a boolean.
+
+    :param flag_name: environment variable name
+    :param strict: raise a ``ValueError`` if variable does not look like a normal boolean
+    :return: ``True`` if has truthy ``DOCKERIZED`` env, ``False`` otherwise.
+    """
     return env_bool_flag(flag_name, strict=strict)
 
 
 def is_production(flag_name: str = 'PRODUCTION', strict: bool = False):
+    """
+    Reads env ``PRODUCTION`` variable as a boolean.
+
+    :param flag_name: environment variable name
+    :param strict: raise a ``ValueError`` if variable does not look like a normal boolean
+    :return: ``True`` if has truthy ``PRODUCTION`` env, ``False`` otherwise.
+    """
     return env_bool_flag(flag_name, strict=strict)

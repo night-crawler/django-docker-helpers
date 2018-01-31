@@ -9,6 +9,10 @@ Contents
    installation
    usage
 
+   management/index
+   utils/index
+
+
 Indices and tables
 ==================
 
