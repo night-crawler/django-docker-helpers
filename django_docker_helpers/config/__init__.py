@@ -1,10 +1,10 @@
 import inspect
 import logging
 import os
-import typing as t
 import textwrap
-from pprint import pformat
+import typing as t
 from collections import deque, namedtuple
+from pprint import pformat
 
 from django_docker_helpers.utils import import_from, shred, wf, run_env_once
 from . import exceptions
@@ -49,7 +49,7 @@ class ConfigLoader:
             'path': '\033[94m',
             'type': '\033[1;33m',
             'value': '\033[32m',
-            
+
             'reset': '\033[0m',
         }
 
