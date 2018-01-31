@@ -3,7 +3,7 @@ django-docker-helpers
 
 .. testsetup::
 
-    from django-docker-helpers import *
+    from django_docker_helpers import *
 
-.. automodule:: django-docker-helpers
+.. automodule:: django_docker_helpers
     :members:

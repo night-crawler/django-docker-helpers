@@ -8,10 +8,6 @@ Contents
    readme
    installation
    usage
-   reference/index
-   contributing
-   authors
-   changelog
 
 Indices and tables
 ==================
@@ -19,13 +15,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-
-Index
------
-
-.. toctree::
-   :maxdepth: 3
-   :titlesonly:
-
-   management/index

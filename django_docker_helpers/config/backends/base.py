@@ -6,6 +6,9 @@ from django_docker_helpers.utils import coerce_str_to_bool
 
 
 class BaseParser:
+    """
+    Base lol
+    """
     def __init__(self,
                  scope: t.Optional[str] = None,
                  config: t.Optional[str] = None,

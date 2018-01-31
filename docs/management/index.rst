@@ -1,5 +1,5 @@
-Management helper functions
-===========================
+Management helpers
+==================
 
 
 
@@ -8,3 +8,4 @@ Management helper functions
 
     db
     files
+    management

@@ -14,15 +14,15 @@ def ensure_caches_alive(max_retries: int = 100,
                         exit_on_failure: bool = True) -> bool:
     """
     Checks every cache backend alias in ``settings.CACHES`` until it becomes available. After ``max_retries``
-    failed attempts to reach any backend it returns ``False``. If ``exit_on_failure`` set it shuts down.
+    failed attempts to reach any backend it returns ``False``. If ``exit_on_failure`` is set it shuts down.
 
     It sets ``django-docker-helpers:available-check`` key for every backend to ensure it's receiving connections.
-    If check passed, key is being deleted.
+    If check is passed, key is being deleted.
 
-    :param exit_on_failure: stop program execution after ``max_retries`` reached
-    :param int max_retries: number of attempts to reach cache backend; default is 100
+    :param exit_on_failure: set to `True` if there's no sense to continue
+    :param int max_retries: number of attempts to reach cache backend; default is ``100``
     :param int retry_timeout: timeout in seconds between attempts
-    :return: True if all backends are available, False if any backend check failed, or exit()
+    :return: True if all backends are available, False if any backend check failed, or ``exit(1)``
     """
     for cache_alias in settings.CACHES.keys():
         cache = caches[cache_alias]
@@ -54,10 +54,10 @@ def ensure_databases_alive(max_retries: int = 100,
 
     For every database alias it tries to ``SELECT 1``. If no errors raised it checks next alias.
 
-    :param exit_on_failure: stop program execution after ``max_retries`` reached
-    :param int max_retries: number of attempts to reach every database; default is 100
+    :param exit_on_failure: set to `True` if there's no sense to continue
+    :param int max_retries: number of attempts to reach every database; default is ``100``
     :param int retry_timeout: timeout in seconds between attempts
-    :return: True if all backends are available, False if any backend check failed, or exit()
+    :return: True if all backends are available, False if any backend check failed, or ``exit(1)``
     """
     template = """
     =============================

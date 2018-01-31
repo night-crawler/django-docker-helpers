@@ -24,7 +24,11 @@ if os.getenv('SPELLCHECK'):
     spelling_show_suggestions = True
     spelling_lang = 'en_US'
 
-source_suffix = '.rst'
+source_parsers = {
+   '.md': 'recommonmark.parser.CommonMarkParser',
+}
+
+source_suffix = ['.rst', '.md']
 master_doc = 'index'
 project = 'django-docker-helpers'
 year = '2018'
