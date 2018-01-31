@@ -4,3 +4,4 @@ django
 dpath
 python-consul
 redis
+terminaltables

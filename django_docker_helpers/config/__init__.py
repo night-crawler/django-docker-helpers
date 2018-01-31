@@ -2,6 +2,8 @@ import inspect
 import logging
 import os
 import typing as t
+import textwrap
+from pprint import pformat
 from collections import deque, namedtuple
 
 from django_docker_helpers.utils import import_from, shred, wf, run_env_once
@@ -24,7 +26,7 @@ def comma_str_to_list(raw_val: str) -> t.List[str]:
     return list(filter(None, raw_val.split(',')))
 
 
-ConfigReadItem = namedtuple('ConfigReadItem', ['parser_name', 'variable_path', 'value', 'is_default'])
+ConfigReadItem = namedtuple('ConfigReadItem', ['variable_path', 'value', 'type', 'is_default', 'parser_name'])
 
 
 class ConfigLoader:
@@ -41,10 +43,14 @@ class ConfigLoader:
         self.config_read_queue = deque(maxlen=keep_read_records_max)
 
         self.colors_map = {
-            'color_parser_name': '\033[0;33m',
-            'color_variable_path': '\033[94m',
-            'color_value': '\033[32m',
-            'uncolor': '\033[0m',
+            'title': '\033[1;35m',
+
+            'parser': '\033[0;33m',
+            'path': '\033[94m',
+            'type': '\033[1;33m',
+            'value': '\033[32m',
+            
+            'reset': '\033[0m',
         }
 
     # useful shortcut
@@ -60,57 +66,13 @@ class ConfigLoader:
                 parser: t.Optional[BaseParser] = None,
                 value: t.Any = None):
         self.config_read_queue.append(ConfigReadItem(
-            str(parser),
             variable_path,
             shred(variable_path, value),
+            type(value).__name__,
             not bool(parser),
+            str(parser),
         ))
 
-    @run_env_once
-    def print_config_read_queue(self, color=False):
-        wf('\n'.join(self.format_config_read_queue(color=color)))
-        wf('\n')
-
-    def format_config_read_queue(self, color=False):
-        screen_options = dict.fromkeys(ConfigReadItem._fields, 0)
-
-        # find max length for every item
-        for config_read_item in self.config_read_queue:
-            for k, v in config_read_item._asdict().items():
-                _len = len(str(v))
-                if screen_options[k] < _len:
-                    screen_options[k] = _len
-
-        # add space for default asterisk sign
-        screen_options['value'] += 1
-        max_length = sum(screen_options.values())
-
-        if color:
-            screen_options.update(self.colors_map)
-        else:
-            screen_options.update(dict.fromkeys(self.colors_map.keys(), ''))
-
-        template_parts = [
-            '%(color_variable_path)s {0[variable_path]:>%(variable_path)s} %(uncolor)s',
-            '=%(color_value)s {0[value]:<%(value)s} %(uncolor)s',
-            '%(color_parser_name)s {0[parser_name]:<%(parser_name)s} %(uncolor)s'
-        ]
-
-        template = ''.join(template_parts) % screen_options
-
-        res = ['CONFIG READ QUEUE'.center(max_length + 3, '=')]
-        for config_read_item in self.config_read_queue:
-            _option_log_item_dict = {k: str(v) for k, v in config_read_item._asdict().items()}
-
-            if config_read_item.is_default:
-                _option_log_item_dict['value'] += '*'
-
-            res.append(template.format(_option_log_item_dict))
-        res.append('=' * (max_length + 3))
-
-        return res
-
-    # TODO: add required argument (if required == True and variable is not defined - raise an exception)
     def get(self,
             variable_path: str,
             default: t.Optional[t.Any] = None,
@@ -240,3 +202,62 @@ class ConfigLoader:
             parsers.append(parser_instance)
 
         return ConfigLoader(parsers=parsers, silent=silent, suppress_logs=suppress_logs)
+
+    def _colorize(self, name: str, value: str, use_color: bool = False) -> str:
+        if not use_color:
+            return value
+        color = self.colors_map.get(name, '')
+        if not color:
+            return value
+        reset = self.colors_map['reset']
+        parts = [color + p + reset for p in str(value).split('\n')]
+        return '\n'.join(parts)
+
+    @staticmethod
+    def _pformat(raw_obj: t.Union[str, t.Any], width: int = 50) -> str:
+        raw_str = str(raw_obj)
+        if len(raw_str) <= width:
+            return raw_obj
+        if isinstance(raw_obj, str):
+            return '\n'.join(textwrap.wrap(raw_str, width=width))
+        return pformat(raw_obj, width=width, compact=True)
+
+    @run_env_once
+    def print_config_read_queue(self, use_color=False):
+        wf(self.format_config_read_queue(use_color=use_color))
+        wf('\n')
+
+    def format_config_read_queue(self, use_color=False, max_col_width=50) -> str:
+        try:
+            from terminaltables import SingleTable
+        except ImportError:
+            import warnings
+            warnings.warn('Cannot display config read queue. Install terminaltables first.')
+            return ''
+
+        col_names_order = ['path', 'value', 'type', 'parser']
+        pretty_bundles = [[self._colorize(name, name.capitalize(), use_color=use_color)
+                           for name in col_names_order]]
+
+        for config_read_item in self.config_read_queue:
+            pretty_attrs = [
+                config_read_item.variable_path,
+                config_read_item.value,
+                config_read_item.type,
+                config_read_item.parser_name
+            ]
+            pretty_attrs = [self._pformat(pa, max_col_width) for pa in pretty_attrs]
+
+            if config_read_item.is_default:
+                pretty_attrs[0] = '*' + pretty_attrs[0]
+
+            if use_color:
+                pretty_attrs = [self._colorize(column_name, pretty_attr, use_color=use_color)
+                                for column_name, pretty_attr in zip(col_names_order, pretty_attrs)]
+            pretty_bundles.append(pretty_attrs)
+
+        table = SingleTable(pretty_bundles)
+        table.title = self._colorize('title', 'CONFIG READ QUEUE', use_color=use_color)
+        table.justify_columns[0] = 'right'
+        # table.inner_row_border = True
+        return str(table.table)

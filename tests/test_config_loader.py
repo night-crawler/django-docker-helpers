@@ -184,18 +184,20 @@ class ConfigLoaderTest:
                                 store_redis_config):
         loader.get('some.variable')
         loader.get('some.brutal')
-        loader.get('debug')
+        loader.get('debug', coerce_type=bool)
         loader.get('i.am.redis')
         loader.get('variable')
         loader.get('name')
         loader.get('nothing.here', 'very long string lol')
         loader.get('secret')
+        loader.get('something.long', list(range(100)))
+        loader.get('something.long.q', '=' * 80)
 
         assert loader.config_read_queue
-        assert '\033' in ''.join(loader.format_config_read_queue(color=True))
-        assert '\033' not in ''.join(loader.format_config_read_queue(color=False))
+        assert '\033[0m' in loader.format_config_read_queue(use_color=True)
+        assert '\033[0m' not in loader.format_config_read_queue(use_color=False)
 
-        loader.print_config_read_queue(color=True)
+        loader.print_config_read_queue(use_color=True)
 
     def test__shortcut_for_get_method(self, loader: ConfigLoader):
         assert loader('some.variable')
