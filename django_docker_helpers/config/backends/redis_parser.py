@@ -2,11 +2,27 @@ import io
 import typing as t
 
 from django_docker_helpers.config.backends.base import BaseParser
-from django_docker_helpers.config.exceptions import KVStorageValueDoestNotExist
+from django_docker_helpers.config.exceptions import KVStorageValueIsEmpty
 from .yaml_parser import YamlParser
 
 
 class RedisParser(BaseParser):
+    """
+    Reads a whole config bundle from a redis key and provides the unified interface to access config options.
+
+    It assumes that config in your storage can be parsed with any simple parser, like
+    :class:`~django_docker_helpers.config.backends.YamlParser`.
+
+    Compared to, e.g. :class:`~django_docker_helpers.config.backends.EnvironmentParser` it does not have scope support
+    by design, since ``endpoint`` is a good enough scope by itself.
+
+    Example:
+    ::
+
+        parser = RedisParser('my/server/config.yml', host=REDIS_HOST, port=REDIS_PORT)
+        parser.get('nested.a.b', coerce_type=int)
+
+    """
     def __init__(self,
                  endpoint: str = 'service',
                  host: str = '127.0.0.1',
@@ -15,6 +31,16 @@ class RedisParser(BaseParser):
                  path_separator: str = '.',
                  inner_parser_class: t.Optional[t.Type[BaseParser]] = YamlParser,
                  **redis_options):
+        """
+
+        :param endpoint: specifies a redis key with serialized config, e.g. ``'services/mailer/config.yml'``
+        :param host: redis host, default is ``'127.0.0.1'``
+        :param port: redis port, default id ``6379``
+        :param db: redis database, default is ``0``
+        :param path_separator: specifies which character separates nested variables, default is ``'.'``
+        :param inner_parser_class: use the specified parser to read config from ``endpoint`` key
+        :param redis_options: additional options for ``redis.Redis`` client
+        """
 
         super().__init__(path_separator=path_separator)
         self.inner_parser_class = inner_parser_class
@@ -43,12 +69,19 @@ class RedisParser(BaseParser):
 
     @property
     def inner_parser(self) -> BaseParser:
+        """
+        Prepares inner config parser for config stored at ``endpoint``.
+
+        :return: an instance of :class:`~django_docker_helpers.config.backends.base.BaseParser`
+
+        :raises config.exceptions.KVStorageValueIsEmpty: if specified ``endpoint`` does not contain a config
+        """
         if self._inner_parser is not None:
             return self._inner_parser
 
         config = self.client.get(self.endpoint)
         if not config:
-            raise KVStorageValueDoestNotExist('Key `{0}` does not exist or value is empty'.format(self.endpoint))
+            raise KVStorageValueIsEmpty('Key `{0}` does not exist or value is empty'.format(self.endpoint))
 
         config = config.decode()
 
@@ -65,6 +98,18 @@ class RedisParser(BaseParser):
             coerce_type: t.Optional[t.Type] = None,
             coercer: t.Optional[t.Callable] = None,
             **kwargs):
+
+        """
+
+        :param variable_path:
+        :param default:
+        :param coerce_type:
+        :param coercer:
+        :param kwargs:
+        :return:
+
+        :raises config.exceptions.KVStorageValueIsEmpty: if specified ``endpoint`` does not contain a config
+        """
 
         return self.inner_parser.get(
             variable_path,

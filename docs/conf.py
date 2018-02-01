@@ -63,9 +63,12 @@ napoleon_use_param = False
 autoclass_content = 'both'
 
 autodoc_default_flags = [
-    'members', 'private-members', 'special-members',
+    'members',
+    'private-members',
+    'special-members',
     # 'undoc-members',
     'show-inheritance',
+    # 'inherited-members'
 ]
 
 

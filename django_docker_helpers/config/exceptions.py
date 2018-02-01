@@ -2,7 +2,7 @@ class KVStorageKeyDoestNotExist(KeyError):
     pass
 
 
-class KVStorageValueDoestNotExist(ValueError):
+class KVStorageValueIsEmpty(ValueError):
     pass
 
 

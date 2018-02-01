@@ -61,7 +61,7 @@ class ConsulBackendTest:
             c = ConsulParser('nothing/here', host=CONSUL_HOST, port=CONSUL_PORT)
             assert c.inner_parser
 
-        with pytest.raises(exceptions.KVStorageValueDoestNotExist):
+        with pytest.raises(exceptions.KVStorageValueIsEmpty):
             c = ConsulParser('my/server/empty.yml', host=CONSUL_HOST, port=CONSUL_PORT)
             assert c.inner_parser
 

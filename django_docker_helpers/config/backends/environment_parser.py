@@ -6,12 +6,48 @@ from django_docker_helpers.utils import coerce_str_to_bool
 
 
 class EnvironmentParser(BaseParser):
+    """
+    Provides a simple interface to read config options from environment variables.
+
+    Example:
+    ::
+
+        from json import loads as json_load
+        from yaml import load as yaml_load
+
+        env = {
+            'MY__VARIABLE': '33',
+            'MY__NESTED__YAML__LIST__VARIABLE': '[33, 42]',
+            'MY__NESTED__JSON__DICT__VARIABLE': '{"obj": true}',
+        }
+
+        parser = EnvironmentParser(env=env)
+        assert p.get('my.variable') == '33'
+
+        assert p.get('my.nested.yaml.list.variable',
+                     coerce_type=list, coercer=yaml_load) == [33, 42]
+        assert p.get('my.nested.json.dict.variable',
+                     coerce_type=dict, coercer=json_load) == {'obj': True}
+
+        parser = EnvironmentParser(env=env, scope='my.nested')
+        assert parser.get('yaml.list.variable',
+                          coerce_type=list, coercer=yaml_load) == [33, 42]
+    """
     def __init__(self,
                  scope: t.Optional[str] = None,
                  config: t.Optional[str] = None,
                  nested_delimiter: str = '__',
                  path_separator: str = '.',
-                 env: t.Dict[str, str] = os.environ):
+                 env: t.Optional[t.Dict[str, str]] = None):
+        """
+        :param scope: a global namespace-like variable prefix
+        :param config: not used
+        :param nested_delimiter: replace ``path_separator`` with an appropriate environment variable delimiter,
+         default is ``__``
+        :param path_separator: specifies which character separates nested variables, default is ``'.'``
+        :param env: a dict with environment variables, default is ``os.environ``
+        """
+        env = env or os.environ
         super().__init__(
             scope=scope, config=config,
             path_separator=path_separator, nested_delimiter=nested_delimiter,
@@ -36,6 +72,20 @@ class EnvironmentParser(BaseParser):
             coerce_type: t.Optional[t.Type] = None,
             coercer: t.Optional[t.Callable] = None,
             **kwargs):
+        """
+        Read a value of ``variable_path`` from environment.
+
+        If ``coerce_type`` is ``bool`` and no ``coercer`` specified, ``coerces`` forced to be
+        :func:`~django_docker_helpers.utils.coerce_str_to_bool`
+
+        :param variable_path: a delimiter-separated path to a nested value
+        :param default: default value if there's no object by specified path
+        :param coerce_type: cast a type of value to a specified one
+        :param coercer: perform a type casting with specified callback
+        :param kwargs: additional arguments inherited parser may need
+        :return: value or default
+        """
+
         var_name = self.get_env_var_name(variable_path)
         val = self.env.get(var_name, self.sentinel)
         if val is self.sentinel:
@@ -51,6 +101,7 @@ class EnvironmentParser(BaseParser):
         return self.nested_delimiter.join(
             filter(
                 None,
-                [self.scope] + variable_path.upper().split(self.path_separator)
+                (self.scope or '').split(self.path_separator) +
+                variable_path.upper().split(self.path_separator)
             )
         )

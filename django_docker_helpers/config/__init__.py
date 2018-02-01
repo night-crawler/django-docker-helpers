@@ -57,7 +57,8 @@ class ConfigLoader:
                  suppress_logs: bool = False,
                  keep_read_records_max: int = 1024):
         """
-        Takes a list of initialized parsers.
+        Takes a list of initialized parsers. It's supposed that one parser type should not appear in ``parsers`` more
+        than once.
 
         :param parsers: a list of initialized parsers
         :param silent: don't raise exceptions if any read attempt failed
@@ -94,21 +95,14 @@ class ConfigLoader:
             str(parser),
         ))
 
-    # useful shortcut
     def __call__(self, variable_path: str,
                  default: t.Optional[t.Any] = None,
                  coerce_type: t.Optional[t.Type] = None,
                  coercer: t.Optional[t.Callable] = None,
+                 required: bool = False,
                  **kwargs):
         """
-        A useful shortcut for method :func:`~django_docker_helpers.config.ConfigLoader.get`
-
-        :param variable_path:
-        :param default:
-        :param coerce_type:
-        :param coercer:
-        :param kwargs:
-        :return:
+        A useful shortcut for method :meth:`~django_docker_helpers.config.ConfigLoader.get`
         """
         return self.get(variable_path, default=default, coerce_type=coerce_type, coercer=coercer, **kwargs)
 
@@ -122,8 +116,6 @@ class ConfigLoader:
         """
         Retrieves a value of ``variable_path`` from every parser instance until first successful read.
         Returns ``default`` if nothing is read.
-        If nothing is read,``required`` flag is set, and there's no ``default`` specified
-        raises ``RequiredValueIsEmpty`` error.
 
         :param variable_path: a path to variable in config
         :param default: default value if ``variable_path`` is not present in any parser
@@ -132,6 +124,9 @@ class ConfigLoader:
         :param required: raise ``RequiredValueIsEmpty`` if no ``default`` and no result
         :param kwargs: additional options to parser
         :return: value or default
+
+        :raises config.exceptions.RequiredValueIsEmpty: if nothing is read,``required``
+         flag is set, and there's no ``default`` specified
         """
 
         for p in self.parsers:
@@ -164,7 +159,22 @@ class ConfigLoader:
         return default
 
     @staticmethod
-    def import_parsers(parser_modules: t.Iterable[str]):
+    def import_parsers(parser_modules: t.Iterable[str]) -> t.Generator[t.Type[BaseParser], None, None]:
+        """
+        Resolves and imports every module specified in ``parser_modules``. Short names from local scope are supported.
+
+        :param parser_modules: a list of dot-separated module paths
+        :return: a generator of [probably] :class:`~django_docker_helpers.config.backends.base.BaseParser`
+
+        Example:
+        ::
+
+            parsers = list(ConfigLoader.import_parsers([
+                'EnvironmentParser',
+                'django_docker_helpers.config.backends.YamlParser'
+            ]))
+            assert parsers == [EnvironmentParser, YamlParser]
+        """
         for import_path in parser_modules:
             path_parts = import_path.rsplit('.', 1)
             if len(path_parts) == 2:
@@ -176,8 +186,31 @@ class ConfigLoader:
             yield import_from(mod_path, parser_class_name)
 
     @staticmethod
-    def load_parser_options_from_env(parser_class: t.Type[BaseParser],
-                                     env: t.Dict[str, str] = os.environ):
+    def load_parser_options_from_env(
+            parser_class: t.Type[BaseParser],
+            env: t.Optional[t.Dict[str, str]] = None) -> t.Dict[str, t.Any]:
+        """
+        Collects for a given ``parser_class`` it's ``__init__`` arguments from environment variables.
+        Uses ``__itit__`` argument type annotations for correct type casting.
+        Environment variables should be prefixed with ``<UPPERCASEPARSERCLASSNAME>__``.
+
+        :param parser_class: a subclass of :class:`~django_docker_helpers.config.backends.base.BaseParser`
+        :param env: a dict with environment variables, default is ``os.environ``
+        :return: parser's ``__init__`` arguments
+
+        Example:
+        ::
+
+            env = {
+                'REDISPARSER__ENDPOINT': 'go.deep',
+                'REDISPARSER__HOST': 'my-host',
+                'REDISPARSER__PORT': '66',
+            }
+
+            res = ConfigLoader.load_parser_options_from_env(RedisParser, env)
+            assert res == {'endpoint': 'go.deep', 'host': 'my-host', 'port': 66}
+        """
+        env = env or os.environ
         sentinel = object()
         spec: inspect.FullArgSpec = inspect.getfullargspec(parser_class.__init__)
         environment_parser = EnvironmentParser(scope=parser_class.__name__.upper(), env=env)
@@ -219,10 +252,44 @@ class ConfigLoader:
 
     @staticmethod
     def from_env(parser_modules: t.Optional[t.Union[t.List[str], t.Tuple[str]]] = DEFAULT_PARSER_MODULES,
-                 env: t.Dict[str, str] = os.environ,
+                 env: t.Optional[t.Dict[str, str]] = None,
                  silent: bool = False,
                  suppress_logs: bool = False,
                  extra: t.Optional[dict] = None):
+        """
+        Creates an instance of :class:`~django_docker_helpers.config.ConfigLoader`
+        with parsers initialized from environment variables.
+
+        By default it tries to initialize all bundled parsers.
+        Parsers may be customized with ``parser_modules`` argument or ``CONFIG__PARSERS`` environment variable.
+        Environment variable has a priority over the method argument.
+
+        :param parser_modules: a list of dot-separated module paths
+        :param env: a dict with environment variables, default is ``os.environ``
+        :param silent: passed to :class:`~django_docker_helpers.config.ConfigLoader`
+        :param suppress_logs: passed to :class:`~django_docker_helpers.config.ConfigLoader`
+        :param extra: pass extra arguments to *every* parser
+        :return: an instance of :class:`~django_docker_helpers.config.ConfigLoader`
+
+        Example:
+        ::
+
+            env = {
+                'CONFIG__PARSERS': 'EnvironmentParser,RedisParser,YamlParser',
+                'ENVIRONMENTPARSER__SCOPE': 'nested',
+                'YAMLPARSER__CONFIG': './tests/data/config.yml',
+                'REDISPARSER__HOST': 'wtf.test',
+                'NESTED__VARIABLE': 'i_am_here',
+            }
+
+            loader = ConfigLoader.from_env(env=env)
+            assert [type(p) for p in loader.parsers] == [EnvironmentParser, RedisParser, YamlParser]
+            assert loader.get('variable') == 'i_am_here', 'Ensure env copied from ConfigLoader'
+
+            loader = ConfigLoader.from_env(parser_modules=['EnvironmentParser'], env={})
+
+        """
+        env = env or os.environ
         extra = extra or {}
         environment_parser = EnvironmentParser(scope='config', env=env)
         silent = environment_parser.get('silent', silent, coerce_type=bool)
@@ -276,11 +343,30 @@ class ConfigLoader:
         return pformat(raw_obj, width=width, compact=True)
 
     @run_env_once
-    def print_config_read_queue(self, use_color=False):
-        wf(self.format_config_read_queue(use_color=use_color))
+    def print_config_read_queue(
+            self,
+            use_color: bool = False,
+            max_col_width: int = 50):
+        """
+        Prints all read (in call order) options.
+
+        :param max_col_width: limit column width, ``50`` by default
+        :param use_color: use terminal colors
+        :return: nothing
+        """
+        wf(self.format_config_read_queue(use_color=use_color, max_col_width=max_col_width))
         wf('\n')
 
-    def format_config_read_queue(self, use_color=False, max_col_width=50) -> str:
+    def format_config_read_queue(self,
+                                 use_color: bool = False,
+                                 max_col_width: int = 50) -> str:
+        """
+        Prepares a string with pretty printed config read queue.
+
+        :param use_color: use terminal colors
+        :param max_col_width: limit column width, ``50`` by default
+        :return:
+        """
         try:
             from terminaltables import SingleTable
         except ImportError:

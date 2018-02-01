@@ -121,6 +121,8 @@ def _materialize_dict(bundle: dict, separator: str = '.') -> t.Generator[t.Tuple
     :param separator: build paths with given separator
     :return: yields tuple(materialized_path, value)
 
+    :raises ValueError: if provided bundle has not ``.items()`` method
+
     Example:
     >>> list(_materialize_dict({'test': {'path': 1}, 'key': 'val'}, '.'))
     >>> [('key', 'val'), ('test.path', 1)]
@@ -280,8 +282,10 @@ def coerce_str_to_bool(val: t.Union[str, int, bool, None], strict: bool = False)
     Converts a given string ``val`` into a boolean.
 
     :param val: any of ``['', 0, 1, true, false, True, False]``
-    :param strict: raise ``ValueError`` if passed anything except ``['', 0, 1, true, false, True, False]``
+    :param strict: raise ``ValueError`` if ``val`` does not look like a boolean-like object
     :return: ``True`` if ``val`` is thruthy, ``False`` otherwise.
+
+    :raises ValueError: if ``strict`` specified and ``val`` got anything except ``['', 0, 1, true, false, True, False]``
     """
     if isinstance(val, bool):
         return val
@@ -312,9 +316,11 @@ def env_bool_flag(flag_name: str, strict: bool = False, env: t.Optional[t.Dict[s
     Converts environment variable into a boolean. Empty string (presence in env) is treated as ``True``.
 
     :param flag_name: environment variable name'
-    :param strict: raise Exception if got anything except ['', 0, 1, true, false]
-    :param env: dict-alike object, ``os.environ`` by default
+    :param strict: raise ``ValueError`` if ``flag_name`` does not look like a boolean-like object
+    :param env: a dict with environment variables, default is ``os.environ``
     :return: ``True`` if ``flag_name`` is thruthy, ``False`` otherwise.
+
+    :raises ValueError: if ``strict`` specified and ``val`` got anything except ``['', 0, 1, true, false, True, False]``
     """
     if env is None:
         env = os.environ

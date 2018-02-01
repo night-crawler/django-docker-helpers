@@ -16,6 +16,18 @@ class MPTConsulParser(BaseParser):
                  path_separator: str = '.',
                  object_deserialize_prefix: str = '::YAML::\n',
                  object_deserialize: t.Optional[t.Callable] = yaml_load):
+        """
+
+        :param scope:
+        :param host:
+        :param port:
+        :param scheme:
+        :param verify:
+        :param cert:
+        :param path_separator: specifies which character separates nested variables, default is ``'.'``
+        :param object_deserialize_prefix:
+        :param object_deserialize:
+        """
         super().__init__(scope=scope, path_separator=path_separator)
         self.object_serialize_prefix = object_deserialize_prefix.encode()
         self.object_deserialize = object_deserialize

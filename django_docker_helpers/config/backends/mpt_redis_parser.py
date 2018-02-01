@@ -16,6 +16,18 @@ class MPTRedisParser(BaseParser):
                  object_deserialize_prefix: str = '::YAML::\n',
                  object_deserialize: t.Optional[t.Callable] = yaml_load,
                  **redis_options):
+        """
+
+        :param scope:
+        :param host:
+        :param port:
+        :param db:
+        :param path_separator: specifies which character separates nested variables, default is ``'.'``
+        :param key_prefix:
+        :param object_deserialize_prefix:
+        :param object_deserialize:
+        :param redis_options:
+        """
 
         super().__init__(scope=scope, path_separator=path_separator)
         self.object_serialize_prefix = object_deserialize_prefix.encode()
