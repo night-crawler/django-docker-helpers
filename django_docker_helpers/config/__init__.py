@@ -30,11 +30,40 @@ ConfigReadItem = namedtuple('ConfigReadItem', ['variable_path', 'value', 'type',
 
 
 class ConfigLoader:
+    """
+    Provides a single interface to read from specified config parsers in order they present.
+    Tracks options being accessed from parsers.
+    Pretty prints config read logs.
+
+    Example:
+        ::
+
+            env = {
+                'PROJECT__DEBUG': 'false'
+            }
+            parsers = [
+                EnvironmentParser(scope='project', env=env),
+                RedisParser('my/conf/service/config.yml', host=REDIS_HOST, port=REDIS_PORT),
+                YamlParser(config='./tests/data/config.yml', scope='project'),
+            ]
+            configure = ConfigLoader(parsers=parsers)
+
+            DEBUG = configure('debug')  # 'false'
+            DEBUG = configure('debug', coerce_type=bool)  # False
+    """
     def __init__(self,
                  parsers: t.List[BaseParser],
                  silent: bool = False,
                  suppress_logs: bool = False,
                  keep_read_records_max: int = 1024):
+        """
+        Takes a list of initialized parsers.
+
+        :param parsers: a list of initialized parsers
+        :param silent: don't raise exceptions if any read attempt failed
+        :param suppress_logs: don't display any exception warnings on screen
+        :param keep_read_records_max: max capacity queue length
+        """
         self.parsers = parsers
         self.silent = silent
         self.suppress_logs = suppress_logs
@@ -53,14 +82,6 @@ class ConfigLoader:
             'reset': '\033[0m',
         }
 
-    # useful shortcut
-    def __call__(self, variable_path: str,
-                 default: t.Optional[t.Any] = None,
-                 coerce_type: t.Optional[t.Type] = None,
-                 coercer: t.Optional[t.Callable] = None,
-                 **kwargs):
-        return self.get(variable_path, default=default, coerce_type=coerce_type, coercer=coercer, **kwargs)
-
     def enqueue(self,
                 variable_path: str,
                 parser: t.Optional[BaseParser] = None,
@@ -73,6 +94,24 @@ class ConfigLoader:
             str(parser),
         ))
 
+    # useful shortcut
+    def __call__(self, variable_path: str,
+                 default: t.Optional[t.Any] = None,
+                 coerce_type: t.Optional[t.Type] = None,
+                 coercer: t.Optional[t.Callable] = None,
+                 **kwargs):
+        """
+        A useful shortcut for method :func:`~django_docker_helpers.config.ConfigLoader.get`
+
+        :param variable_path:
+        :param default:
+        :param coerce_type:
+        :param coercer:
+        :param kwargs:
+        :return:
+        """
+        return self.get(variable_path, default=default, coerce_type=coerce_type, coercer=coercer, **kwargs)
+
     def get(self,
             variable_path: str,
             default: t.Optional[t.Any] = None,
@@ -80,6 +119,20 @@ class ConfigLoader:
             coercer: t.Optional[t.Callable] = None,
             required: bool = False,
             **kwargs):
+        """
+        Retrieves a value of ``variable_path`` from every parser instance until first successful read.
+        Returns ``default`` if nothing is read.
+        If nothing is read,``required`` flag is set, and there's no ``default`` specified
+        raises ``RequiredValueIsEmpty`` error.
+
+        :param variable_path: a path to variable in config
+        :param default: default value if ``variable_path`` is not present in any parser
+        :param coerce_type: cast a result to a specified type
+        :param coercer: perform type cast with specified callback
+        :param required: raise ``RequiredValueIsEmpty`` if no ``default`` and no result
+        :param kwargs: additional options to parser
+        :return: value or default
+        """
 
         for p in self.parsers:
             try:

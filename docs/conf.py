@@ -1,12 +1,11 @@
-import sys
 import os
+import sys
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 sys.path.insert(0, ROOT_DIR)
 sys.path.insert(1, os.path.abspath('.'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'django_settings'
-print(sys.path)
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx_autodoc_typehints',
@@ -25,7 +24,7 @@ if os.getenv('SPELLCHECK'):
     spelling_lang = 'en_US'
 
 source_parsers = {
-   '.md': 'recommonmark.parser.CommonMarkParser',
+    '.md': 'recommonmark.parser.CommonMarkParser',
 }
 
 source_suffix = ['.rst', '.md']
@@ -60,3 +59,24 @@ html_short_title = '%s-%s' % (project, version)
 napoleon_use_ivar = True
 napoleon_use_rtype = False
 napoleon_use_param = False
+
+autoclass_content = 'both'
+
+autodoc_default_flags = [
+    'members', 'private-members', 'special-members',
+    # 'undoc-members',
+    'show-inheritance',
+]
+
+
+def autodoc_skip_member(app, what, name, obj, skip, options):
+    exclusions = (
+        '__weakref__',  # special-members
+        '__doc__', '__module__', '__dict__', '__init__',
+    )
+    exclude = name in exclusions
+    return skip or exclude
+
+
+def setup(app):
+    app.connect('autodoc-skip-member', autodoc_skip_member)
