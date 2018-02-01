@@ -6,6 +6,24 @@ from django_docker_helpers.config.backends.base import BaseParser
 
 
 class MPTRedisParser(BaseParser):
+    """
+    Materialized Path Tree Redis Parser.
+
+    Compared to, e.g. :class:`~django_docker_helpers.config.backends.redis_parser.RedisParser`
+    it does not load a whole config file from a single key, but reads every config option
+    from a corresponding variable path.
+
+    Example:
+    ::
+
+        parser = MPTRedisParser(host=REDIS_HOST, port=REDIS_PORT)
+        parser.get('nested.a.b')
+        parser.get('debug')
+
+    If you want to store your config with separated key paths take
+    :func:`~django_docker_helpers.utils.mp_serialize_dict` helper to materialize your dict.
+    """
+
     def __init__(self,
                  scope: t.Optional[str] = None,
                  host: str = '127.0.0.1',
@@ -18,15 +36,16 @@ class MPTRedisParser(BaseParser):
                  **redis_options):
         """
 
-        :param scope:
-        :param host:
-        :param port:
-        :param db:
+        :param scope: a global namespace-like variable prefix
+        :param host: redis host, default is ``'127.0.0.1'``
+        :param port: redis port, default id ``6379``
+        :param db: redis database, default is ``0``
         :param path_separator: specifies which character separates nested variables, default is ``'.'``
-        :param key_prefix:
-        :param object_deserialize_prefix:
-        :param object_deserialize:
-        :param redis_options:
+        :param key_prefix: prefix all keys with specified one
+        :param object_deserialize_prefix: if object has specified prefix, it's being deserialized with
+         ``object_deserialize``
+        :param object_deserialize: deserializer for complex variables
+        :param redis_options: additional options for ``redis.Redis`` client
         """
 
         super().__init__(scope=scope, path_separator=path_separator)
@@ -60,6 +79,14 @@ class MPTRedisParser(BaseParser):
             coerce_type: t.Optional[t.Type] = None,
             coercer: t.Optional[t.Callable] = None,
             **kwargs):
+        """
+        :param variable_path: a delimiter-separated path to a nested value
+        :param default: default value if there's no object by specified path
+        :param coerce_type: cast a type of a value to a specified one
+        :param coercer: perform a type casting with specified callback
+        :param kwargs: additional arguments inherited parser may need
+        :return: value or default
+        """
 
         if self.scope:
             variable_path = '{0.scope}{0.path_separator}{1}'.format(self, variable_path)

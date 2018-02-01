@@ -13,8 +13,8 @@ class ConsulParser(BaseParser):
     It assumes that config in your storage can be parsed with any simple parser, like
     :class:`~django_docker_helpers.config.backends.YamlParser`.
 
-    Compared to, e.g. :class:`~django_docker_helpers.config.backends.EnvironmentParser` it does not have scope support
-    by design, since ``endpoint`` is a good enough scope by itself.
+    Compared to, e.g. :class:`~django_docker_helpers.config.backends.environment_parser.EnvironmentParser`
+    it does not have scope support by design, since ``endpoint`` is a good enough scope by itself.
 
     Example:
     ::
@@ -113,9 +113,11 @@ class ConsulParser(BaseParser):
             coercer: t.Optional[t.Callable] = None,
             **kwargs):
         """
+        Reads a value of ``variable_path`` from consul kv storage.
+
         :param variable_path: a delimiter-separated path to a nested value
         :param default: default value if there's no object by specified path
-        :param coerce_type: cast a type of value to a specified one
+        :param coerce_type: cast a type of a value to a specified one
         :param coercer: perform a type casting with specified callback
         :param kwargs: additional arguments inherited parser may need
         :return: value or default
