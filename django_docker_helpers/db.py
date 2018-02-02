@@ -14,15 +14,16 @@ def ensure_caches_alive(max_retries: int = 100,
                         exit_on_failure: bool = True) -> bool:
     """
     Checks every cache backend alias in ``settings.CACHES`` until it becomes available. After ``max_retries``
-    failed attempts to reach any backend it returns ``False``. If ``exit_on_failure`` is set it shuts down.
+    attempts to reach any backend are failed it returns ``False``. If ``exit_on_failure`` is set it shuts down with
+    ``exit(1)``.
 
-    It sets ``django-docker-helpers:available-check`` key for every backend to ensure it's receiving connections.
-    If check is passed, key is being deleted.
+    It sets the ``django-docker-helpers:available-check`` key for every cache backend to ensure
+    it's receiving connections. If check is passed the key is deleted.
 
-    :param exit_on_failure: set to `True` if there's no sense to continue
-    :param int max_retries: number of attempts to reach cache backend; default is ``100``
-    :param int retry_timeout: timeout in seconds between attempts
-    :return: True if all backends are available, False if any backend check failed, or ``exit(1)``
+    :param exit_on_failure: set to ``True`` if there's no sense to continue
+    :param int max_retries: a number of attempts to reach cache backend, default is ``100``
+    :param int retry_timeout: a timeout in seconds between attempts, default is ``5``
+    :return: ``True`` if all backends are available ``False`` if any backend check failed
     """
     for cache_alias in settings.CACHES.keys():
         cache = caches[cache_alias]
@@ -50,14 +51,15 @@ def ensure_databases_alive(max_retries: int = 100,
                            exit_on_failure: bool = True) -> bool:
     """
     Checks every database alias in ``settings.DATABASES`` until it becomes available. After ``max_retries``
-    failed attempts to reach any backend it returns ``False``. If ``exit_on_failure`` set it shuts down.
+    attempts to reach any backend are failed it returns ``False``. If ``exit_on_failure`` is set it shuts down with
+    ``exit(1)``.
 
-    For every database alias it tries to ``SELECT 1``. If no errors raised it checks next alias.
+    For every database alias it tries to ``SELECT 1``. If no errors raised it checks the next alias.
 
-    :param exit_on_failure: set to `True` if there's no sense to continue
+    :param exit_on_failure: set to ``True`` if there's no sense to continue
     :param int max_retries: number of attempts to reach every database; default is ``100``
     :param int retry_timeout: timeout in seconds between attempts
-    :return: True if all backends are available, False if any backend check failed, or ``exit(1)``
+    :return: ``True`` if all backends are available, ``False`` if any backend check failed
     """
     template = """
     =============================
@@ -101,7 +103,7 @@ def migrate() -> bool:
     """
     Runs Django migrate command.
 
-    :return: always True
+    :return: always ``True``
     """
     wf('Applying migrations... ', False)
     execute_from_command_line(['./manage.py', 'migrate'])
@@ -115,7 +117,7 @@ def modeltranslation_sync_translation_fields() -> bool:
     Runs ``modeltranslation``'s ``sync_translation_fields`` manage.py command:
     ``execute_from_command_line(['./manage.py', 'sync_translation_fields', '--noinput'])``
 
-    :return: None if modeltranslation is not specified is ``INSTALLED_APPS``, True if all synced.
+    :return: ``None`` if modeltranslation is not specified is ``INSTALLED_APPS``, ``True`` if all synced.
     """
     # if modeltranslation present ensure it's migrations applied too
 

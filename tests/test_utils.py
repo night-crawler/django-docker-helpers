@@ -113,11 +113,6 @@ class UtilsTest:
         for gen_val, reference_val in zip(utils.materialize_dict(sample, separator='/'), results):
             assert gen_val == reference_val, 'Ensure ordering is correct'
 
-    def test__utils__materialize_dict__handle_str(self):
-        sample = 'somestr'
-        with pytest.raises(ValueError):
-            utils.materialize_dict(sample)
-
     def test__utils__mp_serialize_dict(self):
         sample = {
             'bool_flag': '',  # flag
