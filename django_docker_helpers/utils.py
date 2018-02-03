@@ -276,11 +276,12 @@ def coerce_str_to_bool(val: t.Union[str, int, bool, None], strict: bool = False)
     """
     Converts a given string ``val`` into a boolean.
 
-    :param val: any of ``['', 0, 1, true, false, True, False]``
+    :param val: any string representation of boolean
     :param strict: raise ``ValueError`` if ``val`` does not look like a boolean-like object
     :return: ``True`` if ``val`` is thruthy, ``False`` otherwise.
 
-    :raises ValueError: if ``strict`` specified and ``val`` got anything except ``['', 0, 1, true, false, True, False]``
+    :raises ValueError: if ``strict`` specified and ``val`` got anything except
+     ``['', 0, 1, true, false, on, off, True, False]``
     """
     if isinstance(val, bool):
         return val
@@ -298,6 +299,12 @@ def coerce_str_to_bool(val: t.Union[str, int, bool, None], strict: bool = False)
         return True
 
     if val == 'false':
+        return False
+
+    if val == 'on':
+        return True
+
+    if val == 'off':
         return False
 
     if strict:

@@ -32,6 +32,9 @@ class UtilsTest:
         assert utils.coerce_str_to_bool('FALSE') is False
         assert utils.coerce_str_to_bool('true') is True
 
+        assert utils.coerce_str_to_bool('off') is False
+        assert utils.coerce_str_to_bool('on') is True
+
         assert utils.coerce_str_to_bool(False) is False
         assert utils.coerce_str_to_bool(True) is True
 
