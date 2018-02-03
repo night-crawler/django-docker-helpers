@@ -41,6 +41,8 @@ class UtilsTest:
         assert utils.coerce_str_to_bool(0) is False
         assert utils.coerce_str_to_bool(1) is True
 
+        assert utils.coerce_str_to_bool('qwe') is True
+
         with pytest.raises(ValueError):
             utils.coerce_str_to_bool('lol', strict=True)
 

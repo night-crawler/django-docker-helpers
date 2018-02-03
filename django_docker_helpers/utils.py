@@ -8,6 +8,20 @@ from functools import wraps
 from dpath.util import get
 from yaml import dump as dump_yaml
 
+ENV_STR_BOOL_COERCE_MAP = {
+    '': True,  # Flag is set
+
+    0: False,
+    '0': False,
+    'false': False,
+    'off': False,
+
+    1: True,
+    '1': True,
+    'true': True,
+    'on': True,
+}
+
 SHRED_DATA_FIELD_NAMES = (
     'password',
     'secret',
@@ -283,29 +297,13 @@ def coerce_str_to_bool(val: t.Union[str, int, bool, None], strict: bool = False)
     :raises ValueError: if ``strict`` specified and ``val`` got anything except
      ``['', 0, 1, true, false, on, off, True, False]``
     """
-    if isinstance(val, bool):
-        return val
+    if isinstance(val, str):
+        val = val.lower()
 
-    # flag is set
-    if val == '':
-        return True
+    flag = ENV_STR_BOOL_COERCE_MAP.get(val, None)
 
-    val = str(val).lower()
-
-    if val in ['0', '1']:
-        return bool(int(val))
-
-    if val == 'true':
-        return True
-
-    if val == 'false':
-        return False
-
-    if val == 'on':
-        return True
-
-    if val == 'off':
-        return False
+    if flag is not None:
+        return flag
 
     if strict:
         raise ValueError('Unsupported value for boolean flag: `%s`' % val)
