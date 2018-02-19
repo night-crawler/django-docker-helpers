@@ -111,5 +111,5 @@ if __name__ == '__main__':
 ### Testing
 1. `$ pip install -r requirements/dev.txt`
 2. [Download Consul](https://www.consul.io/downloads.html) and unzip it into the project's directory.
-3. `$ ./consulagent -server -ui -dev`
+3. `$ ./consul agent -server -ui -dev`
 4. `$ pytest`

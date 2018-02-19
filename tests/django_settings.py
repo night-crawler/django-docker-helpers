@@ -11,6 +11,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.auth',
     'django.contrib.contenttypes',
+
+    'django_docker_helpers.cli.django',
+
     'tests.test_app',
 ]
 
