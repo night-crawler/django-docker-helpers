@@ -270,7 +270,7 @@ class ConfigLoader:
                  env: t.Optional[t.Dict[str, str]] = None,
                  silent: bool = False,
                  suppress_logs: bool = False,
-                 extra: t.Optional[dict] = None):
+                 extra: t.Optional[dict] = None) -> 'ConfigLoader':
         """
         Creates an instance of :class:`~django_docker_helpers.config.ConfigLoader`
         with parsers initialized from environment variables.
