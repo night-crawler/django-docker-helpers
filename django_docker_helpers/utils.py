@@ -59,6 +59,9 @@ def shred(key_name: str,
 
 
 def shred_deep(value, field_names: t.Iterable[str] = SHRED_DATA_FIELD_NAMES):
+    if not value:
+        return value
+
     if isinstance(value, (int, str)):
         return value
 
