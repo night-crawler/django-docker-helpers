@@ -63,4 +63,3 @@ class MPTRedisBackendTest:
         p = MPTRedisParser(host=REDIS_HOST, port=REDIS_PORT, scope='nested', path_separator='.', key_prefix='my-prefix')
         assert p.get('a.b') == '2'
         assert p.get('a.b', coerce_type=int) == 2
-

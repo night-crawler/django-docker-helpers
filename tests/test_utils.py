@@ -32,11 +32,16 @@ class UtilsTest:
         assert utils.coerce_str_to_bool('FALSE') is False
         assert utils.coerce_str_to_bool('true') is True
 
+        assert utils.coerce_str_to_bool('off') is False
+        assert utils.coerce_str_to_bool('on') is True
+
         assert utils.coerce_str_to_bool(False) is False
         assert utils.coerce_str_to_bool(True) is True
 
         assert utils.coerce_str_to_bool(0) is False
         assert utils.coerce_str_to_bool(1) is True
+
+        assert utils.coerce_str_to_bool('qwe') is True
 
         with pytest.raises(ValueError):
             utils.coerce_str_to_bool('lol', strict=True)
@@ -113,11 +118,6 @@ class UtilsTest:
         for gen_val, reference_val in zip(utils.materialize_dict(sample, separator='/'), results):
             assert gen_val == reference_val, 'Ensure ordering is correct'
 
-    def test__utils__materialize_dict__handle_str(self):
-        sample = 'somestr'
-        with pytest.raises(ValueError):
-            utils.materialize_dict(sample)
-
     def test__utils__mp_serialize_dict(self):
         sample = {
             'bool_flag': '',  # flag
@@ -181,3 +181,29 @@ class UtilsTest:
     def test__shred(self):
         assert utils.shred('password', '1234') == '****'
         assert utils.shred('qwerty', '1234') == '1234'
+
+    def test__shred_deep(self):
+        shredded = utils.shred_deep({
+            'password': 1,
+            'password_2': {
+                'password': 4444,
+            },
+            'list': [
+                {'password': 222},
+                'normal',
+                {'normal': 1}
+            ],
+            'set': {1, 2, 3},
+            'frozenset': frozenset([1, 2, 3, 'password'])
+        })
+
+        assert shredded == {
+            'password': '*',
+            'password_2': {'password': '****'},
+            'list': [
+                {'password': '***'},
+                'normal',
+                {'normal': 1}],
+            'set': {1, 2, 3},
+            'frozenset': frozenset({1, 2, 3, 'password'})
+        }

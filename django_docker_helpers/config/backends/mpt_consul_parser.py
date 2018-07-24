@@ -44,7 +44,7 @@ class MPTConsulParser(BaseParser):
          default is ``'.'``
         :param consul_path_separator: specifies which character separates nested variables in consul kv storage,
          default is ``'/'``
-        :param object_deserialize_prefix: if object has specified prefix, it's being deserialized with
+        :param object_deserialize_prefix: if object has a specified prefix, it's deserialized with
          ``object_deserialize``
         :param object_deserialize: deserializer for complex variables
         """

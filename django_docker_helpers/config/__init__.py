@@ -31,9 +31,9 @@ ConfigReadItem = namedtuple('ConfigReadItem', ['variable_path', 'value', 'type',
 
 class ConfigLoader:
     """
-    Provides a single interface to read from specified config parsers in order they present.
-    Tracks options being accessed from parsers.
-    Pretty prints config read logs.
+    - provides a single interface to read from specified config parsers in order they present;
+    - tracks accessed from parsers options;
+    - prints config options access log in pretty-print way.
 
     Example:
         ::
@@ -57,8 +57,12 @@ class ConfigLoader:
                  suppress_logs: bool = False,
                  keep_read_records_max: int = 1024):
         """
-        Takes a list of initialized parsers. It's supposed that one parser type should not appear in ``parsers`` more
-        than once.
+        Initialization:
+            - takes a list of initialized parsers;
+            - it's supposed to use ONLY unique parsers for ``parsers`` argument
+              (or you are going to get the same initial arguments for all parsers of the same type in
+              :meth:`~django_docker_helpers.config.ConfigLoader.from_env`);
+            - the parsers's order does matter.
 
         :param parsers: a list of initialized parsers
         :param silent: don't raise exceptions if any read attempt failed
@@ -95,7 +99,8 @@ class ConfigLoader:
             str(parser),
         ))
 
-    def __call__(self, variable_path: str,
+    def __call__(self,
+                 variable_path: str,
                  default: t.Optional[t.Any] = None,
                  coerce_type: t.Optional[t.Type] = None,
                  coercer: t.Optional[t.Callable] = None,
@@ -104,7 +109,11 @@ class ConfigLoader:
         """
         A useful shortcut for method :meth:`~django_docker_helpers.config.ConfigLoader.get`
         """
-        return self.get(variable_path, default=default, coerce_type=coerce_type, coercer=coercer, **kwargs)
+        return self.get(
+            variable_path, default=default,
+            coerce_type=coerce_type, coercer=coercer,
+            required=required,
+            **kwargs)
 
     def get(self,
             variable_path: str,
@@ -114,16 +123,17 @@ class ConfigLoader:
             required: bool = False,
             **kwargs):
         """
-        Retrieves a value of ``variable_path`` from every parser instance until first successful read.
-        Returns ``default`` if nothing is read.
+        Tries to read a ``variable_path`` from each of the passed parsers.
+        It stops if read was successful and returns a retrieved value.
+        If none of the parsers contain a value for the specified path it returns ``default``.
 
         :param variable_path: a path to variable in config
-        :param default: default value if ``variable_path`` is not present in any parser
+        :param default: a default value if ``variable_path`` is not present anywhere
         :param coerce_type: cast a result to a specified type
-        :param coercer: perform type cast with specified callback
+        :param coercer: perform the type casting with specified callback
         :param required: raise ``RequiredValueIsEmpty`` if no ``default`` and no result
-        :param kwargs: additional options to parser
-        :return: value or default
+        :param kwargs: additional options to all parsers
+        :return: **the first successfully read** value from the list of parser instances or ``default``
 
         :raises config.exceptions.RequiredValueIsEmpty: if nothing is read,``required``
          flag is set, and there's no ``default`` specified
@@ -161,7 +171,8 @@ class ConfigLoader:
     @staticmethod
     def import_parsers(parser_modules: t.Iterable[str]) -> t.Generator[t.Type[BaseParser], None, None]:
         """
-        Resolves and imports every module specified in ``parser_modules``. Short names from local scope are supported.
+        Resolves and imports all modules specified in ``parser_modules``. Short names from the local scope
+        are supported (the scope is ``django_docker_helpers.config.backends``).
 
         :param parser_modules: a list of dot-separated module paths
         :return: a generator of [probably] :class:`~django_docker_helpers.config.backends.base.BaseParser`
@@ -190,13 +201,17 @@ class ConfigLoader:
             parser_class: t.Type[BaseParser],
             env: t.Optional[t.Dict[str, str]] = None) -> t.Dict[str, t.Any]:
         """
-        Collects for a given ``parser_class`` it's ``__init__`` arguments from environment variables.
-        Uses ``__itit__`` argument type annotations for correct type casting.
-        Environment variables should be prefixed with ``<UPPERCASEPARSERCLASSNAME>__``.
+        Extracts arguments from ``parser_class.__init__`` and populates them from environment variables.
+
+        Uses ``__init__`` argument type annotations for correct type casting.
+
+        .. note::
+
+            Environment variables should be prefixed with ``<UPPERCASEPARSERCLASSNAME>__``.
 
         :param parser_class: a subclass of :class:`~django_docker_helpers.config.backends.base.BaseParser`
         :param env: a dict with environment variables, default is ``os.environ``
-        :return: parser's ``__init__`` arguments
+        :return: parser's ``__init__`` arguments dict mapping
 
         Example:
         ::
@@ -255,7 +270,7 @@ class ConfigLoader:
                  env: t.Optional[t.Dict[str, str]] = None,
                  silent: bool = False,
                  suppress_logs: bool = False,
-                 extra: t.Optional[dict] = None):
+                 extra: t.Optional[dict] = None) -> 'ConfigLoader':
         """
         Creates an instance of :class:`~django_docker_helpers.config.ConfigLoader`
         with parsers initialized from environment variables.
