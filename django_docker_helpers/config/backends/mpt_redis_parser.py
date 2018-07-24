@@ -42,7 +42,7 @@ class MPTRedisParser(BaseParser):
         :param db: redis database, default is ``0``
         :param path_separator: specifies which character separates nested variables, default is ``'.'``
         :param key_prefix: prefix all keys with specified one
-        :param object_deserialize_prefix: if object has specified prefix, it's being deserialized with
+        :param object_deserialize_prefix: if object has a specified prefix, it's deserialized with
          ``object_deserialize``
         :param object_deserialize: deserializer for complex variables
         :param redis_options: additional options for ``redis.Redis`` client

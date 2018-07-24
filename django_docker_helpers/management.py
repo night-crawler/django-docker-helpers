@@ -7,9 +7,10 @@ from django_docker_helpers.utils import wf, run_env_once, dot_path
 @run_env_once
 def create_admin(user_config_path: str = 'CONFIG.superuser') -> bool:
     """
-    Creates superuser from a specified dict/object bundle located at ``user_config_path``. Skips if the specified object
-    contains no email or no username. If username already exists and no usable password set, it updates password
-    with a specified one.
+    Creates a superuser from a specified dict/object bundle located at ``user_config_path``.
+    Skips if the specified object contains no email or no username.
+    If a user with the specified username already exists and has no usable password it updates user's password with
+    a specified one.
 
     ``user_config_path`` can accept any path to a deep nested object, like dict of dicts,
     object of dicts of objects, and so on. Let's assume you have this weird config in your ``settings.py``:
@@ -27,7 +28,7 @@ def create_admin(user_config_path: str = 'CONFIG.superuser') -> bool:
 
     To access the ``'user'`` bundle you have to specify: ``local_config.my_var.user``.
 
-    :param user_config_path: dot-separated path to object or dict
+    :param user_config_path: dot-separated path to object or dict, default is ``'CONFIG.superuser'``
     :return: ``True`` if user has been created, ``False`` otherwise
     """
     from django.conf import settings
@@ -70,10 +71,10 @@ def create_admin(user_config_path: str = 'CONFIG.superuser') -> bool:
 
 def run_gunicorn(application: WSGIHandler, gunicorn_module_name: str = 'gunicorn_prod'):
     """
-    Runs gunicorn with specified config.
+    Runs gunicorn with a specified config.
 
     :param application: Django uwsgi application
-    :param gunicorn_module_name: gunicorn settings module
+    :param gunicorn_module_name: gunicorn settings module name
     :return: ``Application().run()``
     """
     from gunicorn.app.base import Application

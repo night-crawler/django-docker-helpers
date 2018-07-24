@@ -6,7 +6,7 @@ def collect_static() -> bool:
     """
     Runs Django ``collectstatic`` command in silent mode.
 
-    :return: always True
+    :return: always ``True``
     """
     from django.core.management import execute_from_command_line
     # from django.conf import settings

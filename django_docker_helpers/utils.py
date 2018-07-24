@@ -8,6 +8,20 @@ from functools import wraps
 from dpath.util import get
 from yaml import dump as dump_yaml
 
+ENV_STR_BOOL_COERCE_MAP = {
+    '': True,  # Flag is set
+
+    0: False,
+    '0': False,
+    'false': False,
+    'off': False,
+
+    1: True,
+    '1': True,
+    'true': True,
+    'on': True,
+}
+
 SHRED_DATA_FIELD_NAMES = (
     'password',
     'secret',
@@ -24,12 +38,12 @@ def shred(key_name: str,
           value: t.Any,
           field_names: t.Iterable[str] = SHRED_DATA_FIELD_NAMES) -> t.Union[t.Any, str]:
     """
-    Replaces sensitive data in ``value`` with `*` if ``key_name`` contains anything that looks like a password.
+    Replaces sensitive data in ``value`` with ``*`` if ``key_name`` contains something that looks like a secret.
 
-    :param field_names: a list with key names that can possibly contain sensitive data
-    :param key_name: current key name being checked
-    :param value: value to mask
-    :return: unchanged value if nothing to hide, '*' * len(str(value)) otherwise
+    :param field_names: a list of key names that can possibly contain sensitive data
+    :param key_name: a key name to check
+    :param value: a value to mask
+    :return: an unchanged value if nothing to hide, ``'*' * len(str(value))`` otherwise
     """
     key_name = key_name.lower()
     need_shred = False
@@ -73,8 +87,8 @@ def dot_path(obj: t.Union[t.Dict, object],
              default: t.Any = None,
              separator: str = '.'):
     """
-    Access elements of mixed dict/object type by dot-separated path.
-    .. testcode::
+    Provides an access to elements of a mixed dict/object type by a delimiter-separated path.
+    ::
 
         class O1:
             my_dict = {'a': {'b': 1}}
@@ -132,21 +146,16 @@ def dotkey(obj: dict, path: str, default=None, separator='.'):
 
 def _materialize_dict(bundle: dict, separator: str = '.') -> t.Generator[t.Tuple[str, t.Any], None, None]:
     """
-    Traverse and transform a given dict ``bundle`` into tuples of ``(key_path, value)``.
+    Traverses and transforms a given dict ``bundle`` into tuples of ``(key_path, value)``.
 
     :param bundle: a dict to traverse
-    :param separator: build paths with given separator
-    :return: yields tuple(materialized_path, value)
-
-    :raises ValueError: if provided bundle has not ``.items()`` method
+    :param separator: build paths with a given separator
+    :return: a generator of tuples ``(materialized_path, value)``
 
     Example:
     >>> list(_materialize_dict({'test': {'path': 1}, 'key': 'val'}, '.'))
     >>> [('key', 'val'), ('test.path', 1)]
     """
-    if not hasattr(bundle, 'items'):
-        raise ValueError('Cannot materialize an object with no `items()`: %s' % repr(bundle))
-
     for path_prefix, v in bundle.items():
         if not isinstance(v, dict):
             yield str(path_prefix), v
@@ -158,12 +167,12 @@ def _materialize_dict(bundle: dict, separator: str = '.') -> t.Generator[t.Tuple
 
 def materialize_dict(bundle: dict, separator: str = '.') -> t.List[t.Tuple[str, t.Any]]:
     """
-    Transforms a given ``bundle`` into a `sorted` list of tuples with materialized value paths and values:
-    ``('path.to.value', <value>)``. Output is ordered by depth: deepest element first.
+    Transforms a given ``bundle`` into a *sorted* list of tuples with materialized value paths and values:
+    ``('path.to.value', <value>)``. Output is ordered by depth: the deepest element first.
 
     :param bundle: a dict to materialize
-    :param separator: build paths with given separator
-    :return: a depth descending and alphabetically ascending sorted list (-deep, asc), longest first
+    :param separator: build paths with a given separator
+    :return: a depth descending and alphabetically ascending sorted list (-deep, asc), the longest first
 
     ::
 
@@ -205,16 +214,16 @@ def mp_serialize_dict(
         serialize: t.Optional[t.Callable] = dump_yaml,
         value_prefix: str = '::YAML::\n') -> t.List[t.Tuple[str, bytes]]:
     """
-    Transforms a given ``bundle`` into a `sorted` list of tuples with materialized value paths and values:
-    ``('path.to.value', b'value')``. If ``<value>`` is not an instance of a basic type, it's being serialized
-    with ``serialize`` callback. If value is an empty string, it's being serialized anyway to enforce correct type
-    if storage backend does not support empty string.
+    Transforms a given ``bundle`` into a *sorted* list of tuples with materialized value paths and values:
+    ``('path.to.value', b'<some>')``. If the ``<some>`` value is not an instance of a basic type, it's serialized
+    with ``serialize`` callback. If this value is an empty string, it's serialized anyway to enforce correct
+    type if storage backend does not support saving empty strings.
 
-    :param bundle: dict to materialize
-    :param separator: build paths with given separator
-    :param serialize: method to serialize non-basic types, default is yaml.dump
-    :param value_prefix: prefix for non-basic serialized types
-    :return: list of tuples (mat_path, b'value')
+    :param bundle: a dict to materialize
+    :param separator: build paths with a given separator
+    :param serialize: a method to serialize non-basic types, default is ``yaml.dump``
+    :param value_prefix: a prefix for non-basic serialized types
+    :return: a list of tuples ``(mat_path, b'value')``
 
     ::
 
@@ -279,13 +288,13 @@ def wf(raw_str: str,
        stream: t.TextIO = sys.stdout):
     """
     Writes a given ``raw_str`` into a ``stream``. Ignores output if ``prevent_completion_polluting`` is set and there's
-    no extra ``sys.argv`` arguments present (bash completion issue).
+    no extra ``sys.argv`` arguments present (a bash completion issue).
 
-    :param raw_str: raw string to print
-    :param flush: execute (sys.stdout).flush()
+    :param raw_str: a raw string to print
+    :param flush: execute ``flush()``
     :param prevent_completion_polluting: don't write anything if ``len(sys.argv) <= 1``
     :param stream: ``sys.stdout`` by default
-    :return: nothing
+    :return: None
     """
     if prevent_completion_polluting and len(sys.argv) <= 1:
         return
@@ -298,29 +307,20 @@ def coerce_str_to_bool(val: t.Union[str, int, bool, None], strict: bool = False)
     """
     Converts a given string ``val`` into a boolean.
 
-    :param val: any of ``['', 0, 1, true, false, True, False]``
+    :param val: any string representation of boolean
     :param strict: raise ``ValueError`` if ``val`` does not look like a boolean-like object
     :return: ``True`` if ``val`` is thruthy, ``False`` otherwise.
 
-    :raises ValueError: if ``strict`` specified and ``val`` got anything except ``['', 0, 1, true, false, True, False]``
+    :raises ValueError: if ``strict`` specified and ``val`` got anything except
+     ``['', 0, 1, true, false, on, off, True, False]``
     """
-    if isinstance(val, bool):
-        return val
+    if isinstance(val, str):
+        val = val.lower()
 
-    # flag is set
-    if val == '':
-        return True
+    flag = ENV_STR_BOOL_COERCE_MAP.get(val, None)
 
-    val = str(val).lower()
-
-    if val in ['0', '1']:
-        return bool(int(val))
-
-    if val == 'true':
-        return True
-
-    if val == 'false':
-        return False
+    if flag is not None:
+        return flag
 
     if strict:
         raise ValueError('Unsupported value for boolean flag: `%s`' % val)
@@ -330,18 +330,16 @@ def coerce_str_to_bool(val: t.Union[str, int, bool, None], strict: bool = False)
 
 def env_bool_flag(flag_name: str, strict: bool = False, env: t.Optional[t.Dict[str, str]] = None) -> bool:
     """
-    Converts environment variable into a boolean. Empty string (presence in env) is treated as ``True``.
+    Converts an environment variable into a boolean. Empty string (presence in env) is treated as ``True``.
 
-    :param flag_name: environment variable name'
-    :param strict: raise ``ValueError`` if ``flag_name`` does not look like a boolean-like object
+    :param flag_name: an environment variable name
+    :param strict: raise ``ValueError`` if a ``flag_name`` value connot be coerced into a boolean in obvious way
     :param env: a dict with environment variables, default is ``os.environ``
     :return: ``True`` if ``flag_name`` is thruthy, ``False`` otherwise.
 
     :raises ValueError: if ``strict`` specified and ``val`` got anything except ``['', 0, 1, true, false, True, False]``
     """
-    if env is None:
-        env = os.environ
-
+    env = env or os.environ
     sentinel = object()
     val = env.get(flag_name, sentinel)
 
@@ -378,7 +376,7 @@ def is_dockerized(flag_name: str = 'DOCKERIZED', strict: bool = False):
 
     :param flag_name: environment variable name
     :param strict: raise a ``ValueError`` if variable does not look like a normal boolean
-    :return: ``True`` if has truthy ``DOCKERIZED`` env, ``False`` otherwise.
+    :return: ``True`` if has truthy ``DOCKERIZED`` env, ``False`` otherwise
     """
     return env_bool_flag(flag_name, strict=strict)
 
@@ -389,6 +387,6 @@ def is_production(flag_name: str = 'PRODUCTION', strict: bool = False):
 
     :param flag_name: environment variable name
     :param strict: raise a ``ValueError`` if variable does not look like a normal boolean
-    :return: ``True`` if has truthy ``PRODUCTION`` env, ``False`` otherwise.
+    :return: ``True`` if has truthy ``PRODUCTION`` env, ``False`` otherwise
     """
     return env_bool_flag(flag_name, strict=strict)
