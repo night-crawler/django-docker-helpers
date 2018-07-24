@@ -181,3 +181,29 @@ class UtilsTest:
     def test__shred(self):
         assert utils.shred('password', '1234') == '****'
         assert utils.shred('qwerty', '1234') == '1234'
+
+    def test__shred_deep(self):
+        shredded = utils.shred_deep({
+            'password': 1,
+            'password_2': {
+                'password': 4444,
+            },
+            'list': [
+                {'password': 222},
+                'normal',
+                {'normal': 1}
+            ],
+            'set': {1, 2, 3},
+            'frozenset': frozenset([1, 2, 3, 'password'])
+        })
+
+        assert shredded == {
+            'password': '*',
+            'password_2': {'password': '****'},
+            'list': [
+                {'password': '***'},
+                'normal',
+                {'normal': 1}],
+            'set': {1, 2, 3},
+            'frozenset': frozenset({1, 2, 3, 'password'})
+        }

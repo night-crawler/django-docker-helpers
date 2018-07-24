@@ -44,6 +44,23 @@ def shred(key_name: str,
     return '*' * len(str(value))
 
 
+def shred_deep(value, field_names: t.Iterable[str] = SHRED_DATA_FIELD_NAMES):
+    if isinstance(value, (int, str)):
+        return value
+
+    if isinstance(value, dict):
+        _value = {}
+        for k, v in value.items():
+            if isinstance(v, (int, str)):
+                _value[k] = shred(k, v, field_names=field_names)
+            else:
+                _value[k] = shred_deep(v, field_names=field_names)
+        return _value
+
+    _value = [shred_deep(v, field_names=field_names) for v in value]
+    return type(value)(_value)
+
+
 def import_from(module: str, name: str):
     return getattr(
         importlib.import_module(module, [name]),
