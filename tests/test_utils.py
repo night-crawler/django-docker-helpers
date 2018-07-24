@@ -207,3 +207,5 @@ class UtilsTest:
             'set': {1, 2, 3},
             'frozenset': frozenset({1, 2, 3, 'password'})
         }
+
+        utils.shred_deep(None)
