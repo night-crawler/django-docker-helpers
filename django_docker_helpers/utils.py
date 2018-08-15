@@ -1,3 +1,4 @@
+import collections
 import importlib
 import os
 import sys
@@ -62,16 +63,16 @@ def shred_deep(value, field_names: t.Iterable[str] = SHRED_DATA_FIELD_NAMES):
     if not value:
         return value
 
-    if isinstance(value, (int, str)):
+    if not isinstance(value, collections.Iterable) or isinstance(value, str):
         return value
 
     if isinstance(value, dict):
         _value = {}
         for k, v in value.items():
-            if isinstance(v, (int, str)):
-                _value[k] = shred(k, v, field_names=field_names)
-            else:
+            if isinstance(v, collections.Iterable) and not isinstance(v, str):
                 _value[k] = shred_deep(v, field_names=field_names)
+            else:
+                _value[k] = shred(k, v, field_names=field_names)
         return _value
 
     _value = [shred_deep(v, field_names=field_names) for v in value]
