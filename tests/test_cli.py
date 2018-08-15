@@ -1,9 +1,9 @@
-from io import StringIO
-import os
-from unittest import mock
-
 # noinspection PyPackageRequirements
 import pytest
+
+import os
+from io import StringIO
+from unittest import mock
 
 from django.core.management import call_command
 

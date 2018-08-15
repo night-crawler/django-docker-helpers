@@ -1,10 +1,9 @@
-import os
-
 # noinspection PyPackageRequirements
 import pytest
 
-from django_docker_helpers.config import ConfigLoader
-from django_docker_helpers.config import exceptions
+import os
+
+from django_docker_helpers.config import ConfigLoader, exceptions
 from django_docker_helpers.config.backends import *
 from django_docker_helpers.utils import mp_serialize_dict
 

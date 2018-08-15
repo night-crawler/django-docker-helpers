@@ -1,8 +1,8 @@
-import os
-
 # noinspection PyPackageRequirements
 import pytest
-# noinspection PyPackageRequirements
+
+import os
+
 from yaml import dump as yaml_dump
 
 from django_docker_helpers.config import exceptions
@@ -69,4 +69,3 @@ class ConsulBackendTest:
         assert consul_parser.get('nested.a.b', coerce_type=int) == 2
         assert consul_parser.get('nested.a') == {'b': 2}
         assert consul_parser.get('nested.nothing', default='qwe') == 'qwe'
-

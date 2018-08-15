@@ -5,7 +5,7 @@ from django.core.cache import caches
 from django.core.management import execute_from_command_line
 from django.db import OperationalError, connections
 
-from django_docker_helpers.utils import wf, run_env_once
+from django_docker_helpers.utils import run_env_once, wf
 
 
 @run_env_once

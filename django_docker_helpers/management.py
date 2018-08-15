@@ -1,7 +1,7 @@
 from django.core.handlers.wsgi import WSGIHandler
 from django.core.management import execute_from_command_line
 
-from django_docker_helpers.utils import wf, run_env_once, dot_path
+from django_docker_helpers.utils import dot_path, run_env_once, wf
 
 
 @run_env_once

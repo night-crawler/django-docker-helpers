@@ -1,8 +1,8 @@
-import os
-
 # noinspection PyPackageRequirements
 import pytest
-# noinspection PyPackageRequirements
+
+import os
+
 from yaml import dump as yaml_dump
 
 from django_docker_helpers.config import exceptions

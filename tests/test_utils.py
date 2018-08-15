@@ -1,7 +1,7 @@
-import os
-
 # noinspection PyPackageRequirements
 import pytest
+
+import os
 
 from django_docker_helpers import utils
 

@@ -1,9 +1,11 @@
-from unittest.mock import patch
-
 # noinspection PyPackageRequirements
 import pytest
 
-from django_docker_helpers.db import migrate, ensure_caches_alive, ensure_databases_alive
+from unittest.mock import patch
+
+from django_docker_helpers.db import (
+    ensure_caches_alive, ensure_databases_alive, migrate
+)
 from django_docker_helpers.files import collect_static
 from django_docker_helpers.management import create_admin
 

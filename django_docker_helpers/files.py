@@ -1,4 +1,4 @@
-from django_docker_helpers.utils import wf, run_env_once
+from django_docker_helpers.utils import run_env_once, wf
 
 
 @run_env_once

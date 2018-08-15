@@ -1,9 +1,11 @@
-import os
-
 # noinspection PyPackageRequirements
 import pytest
 
-from django_docker_helpers.config.backends.mpt_consul_parser import MPTConsulParser
+import os
+
+from django_docker_helpers.config.backends.mpt_consul_parser import (
+    MPTConsulParser
+)
 from django_docker_helpers.utils import mp_serialize_dict
 
 pytestmark = [pytest.mark.backend, pytest.mark.consul]
