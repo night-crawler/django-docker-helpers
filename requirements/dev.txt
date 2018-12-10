@@ -5,3 +5,4 @@ pypandoc
 pytest
 pytest-django
 python-memcached
+pytest-cov

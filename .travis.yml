@@ -1,6 +1,9 @@
 dist: xenial
 language: python
-cache: pip
+cache:
+  directories:
+    - $CONSUL_DIR
+  pip: true
 sudo: false
 
 env:

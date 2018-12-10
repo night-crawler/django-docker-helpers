@@ -17,3 +17,4 @@ tests/test_app/migrations
 # Files
 consul
 tests/test.sqlite
+/.coverage
