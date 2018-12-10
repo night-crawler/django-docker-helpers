@@ -1,0 +1,5 @@
+-r ./base.txt
+
+sphinx_autodoc_typehints
+recommonmark
+sphinx_rtd_theme
