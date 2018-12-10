@@ -6,6 +6,9 @@ cache:
   pip: true
 sudo: false
 
+services:
+  - redis-server
+
 env:
   global:
     - CONSUL_VERSION=1.4.0
