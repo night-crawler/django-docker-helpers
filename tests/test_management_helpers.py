@@ -28,7 +28,7 @@ class ManagementTest:
 
     def test__ensure_caches_alive(self):
         with patch('django_docker_helpers.db.wf') as wf:
-            assert ensure_caches_alive(max_retries=1)
+            assert ensure_caches_alive(max_retries=1, exit_on_failure=False)
             assert any('[+]' in arg[0][0] for arg in wf.call_args_list)
 
     def test__collect_static(self):

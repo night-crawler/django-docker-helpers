@@ -27,7 +27,7 @@ def ensure_caches_alive(max_retries: int = 100,
     """
     for cache_alias in settings.CACHES.keys():
         cache = caches[cache_alias]
-        wf('Checking redis connection alive for cache `%s`... ' % cache_alias, False)
+        wf('Checking if the cache backed is accessible for the alias `%s`... ' % cache_alias, False)
         for i in range(max_retries):
             try:
                 cache.set('django-docker-helpers:available-check', '1')

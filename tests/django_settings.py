@@ -29,7 +29,7 @@ MEMCACHED_PORT = os.getenv('MEMCACHED_HOST', '11211')
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': '{0}:{1}'.format(MEMCACHED_HOST, MEMCACHED_PORT),
     }
 }

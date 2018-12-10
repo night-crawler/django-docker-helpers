@@ -1,0 +1,54 @@
+dist: xenial
+language: python
+cache:
+  directories:
+    - $CONSUL_DIR
+  pip: true
+sudo: false
+
+services:
+  - redis-server
+
+env:
+  global:
+    - CONSUL_VERSION=1.4.0
+    - CONSUL_DIR=$HOME/consul_$CONSUL_VERSION
+
+install:
+  - pip install -r requirements/dev.txt
+
+before_install:
+  - mkdir -p ${CONSUL_DIR}
+  - curl -sLo ${CONSUL_DIR}/consul.zip https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip
+  - unzip -o /${CONSUL_DIR}/consul.zip -d /${CONSUL_DIR}/
+  - export PATH="${CONSUL_DIR}:$PATH"
+  - consul agent -server -ui -dev &
+  - sleep 5
+#  - pip install -U pip setuptools virtualenvwrapper
+#  - source $(which virtualenvwrapper.sh)
+#  - wipeenv
+
+script:
+  - pip install django==$DJANGO
+  - pytest --cov="django_docker_helpers"
+
+after_success:
+  - pip install codecov
+  - codecov
+
+after_failure:
+  - dmesg | tail -n 100
+
+matrix:
+  fast_finish: true
+  include:
+    - { python: "3.6", env: [DJANGO=1.11] }
+    - { python: "3.6", env: [DJANGO=2.0] }
+    - { python: "3.6", env: [DJANGO=2.1] }
+
+    - { python: "3.7", env: [DJANGO=2.0] }
+    - { python: "3.7", env: [DJANGO=2.1] }
+
+notifications:
+  email: false
+
