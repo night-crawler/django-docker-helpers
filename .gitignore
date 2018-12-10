@@ -18,3 +18,4 @@ tests/test_app/migrations
 consul
 tests/test.sqlite
 /.coverage
+consul.zip
