@@ -44,14 +44,14 @@ class YamlParser(BaseParser):
         if self._data is not None:
             return self._data
 
-        from yaml import load
+        from yaml import load, SafeLoader
 
         if isinstance(self.config, str):
             config = open(self.config)
         else:
             config = self.config
 
-        self._data = load(config)
+        self._data = load(config, Loader=SafeLoader)
         return self._data
 
     def get_client(self):

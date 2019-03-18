@@ -7,7 +7,15 @@ from decimal import Decimal
 from functools import wraps
 
 from dpath.util import get
+from yaml import SafeLoader
 from yaml import dump as dump_yaml
+from yaml import load as yaml_load
+
+
+# noinspection PyPep8Naming
+def default_yaml_object_deserialize(stream, Loader=SafeLoader):
+    return yaml_load(stream, Loader=Loader)
+
 
 ENV_STR_BOOL_COERCE_MAP = {
     '': True,  # Flag is set

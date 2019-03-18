@@ -3,13 +3,14 @@ import pytest
 
 from json import loads as json_load
 
-from yaml import load as yaml_load
-
-from django_docker_helpers.config.backends.environment_parser import (
-    EnvironmentParser
-)
+from django_docker_helpers.config.backends.environment_parser import EnvironmentParser
 
 pytestmark = [pytest.mark.backend, pytest.mark.env]
+
+
+def yaml_load_safe(stream):
+    from yaml import load, SafeLoader
+    return load(stream, SafeLoader)
 
 
 # noinspection PyMethodMayBeStatic
@@ -43,7 +44,7 @@ class EnvironmentBackendTest:
 
         # test complex types
         parser = EnvironmentParser(env=env)
-        assert parser.get('my.nested.yaml.list.variable', coerce_type=list, coercer=yaml_load) == [33, 42]
+        assert parser.get('my.nested.yaml.list.variable', coerce_type=list, coercer=yaml_load_safe) == [33, 42]
         assert parser.get('my.nested.json.list.variable', coerce_type=list, coercer=json_load) == ['33', 42]
 
         assert parser.get('my.nested.json.dict.variable', coerce_type=dict, coercer=json_load) == {'obj': True}
@@ -52,7 +53,7 @@ class EnvironmentBackendTest:
 
         # test dot-separated scope
         parser = EnvironmentParser(env=env, scope='my.nested')
-        assert parser.get('yaml.list.variable', coerce_type=list, coercer=yaml_load) == [33, 42]
+        assert parser.get('yaml.list.variable', coerce_type=list, coercer=yaml_load_safe) == [33, 42]
 
     def test__path_separator(self):
         _env = {

@@ -3,9 +3,7 @@ import pytest
 
 import os
 
-from django_docker_helpers.config.backends.mpt_redis_parser import (
-    MPTRedisParser
-)
+from django_docker_helpers.config.backends.mpt_redis_parser import MPTRedisParser
 from django_docker_helpers.utils import mp_serialize_dict
 
 pytestmark = [pytest.mark.backend, pytest.mark.redis]

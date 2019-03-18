@@ -1,8 +1,7 @@
 import typing as t
 
-from yaml import load as yaml_load
-
 from django_docker_helpers.config.backends.base import BaseParser
+from django_docker_helpers.utils import default_yaml_object_deserialize
 
 
 class MPTRedisParser(BaseParser):
@@ -32,7 +31,7 @@ class MPTRedisParser(BaseParser):
                  path_separator: str = '.',
                  key_prefix: str = '',
                  object_deserialize_prefix: str = '::YAML::\n',
-                 object_deserialize: t.Optional[t.Callable] = yaml_load,
+                 object_deserialize: t.Optional[t.Callable] = default_yaml_object_deserialize,
                  **redis_options):
         """
 

@@ -2,9 +2,7 @@ import io
 import typing as t
 
 from django_docker_helpers.config.backends.base import BaseParser
-from django_docker_helpers.config.exceptions import (
-    KVStorageKeyDoestNotExist, KVStorageValueIsEmpty
-)
+from django_docker_helpers.config.exceptions import KVStorageKeyDoestNotExist, KVStorageValueIsEmpty
 
 from .yaml_parser import YamlParser
 
