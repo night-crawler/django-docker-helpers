@@ -99,14 +99,14 @@ def ensure_databases_alive(max_retries: int = 100,
 
 
 @run_env_once
-def migrate() -> bool:
+def migrate(*argv) -> bool:
     """
     Runs Django migrate command.
 
     :return: always ``True``
     """
     wf('Applying migrations... ', False)
-    execute_from_command_line(['./manage.py', 'migrate'])
+    execute_from_command_line(['./manage.py', 'migrate'] + list(argv))
     wf('[+]\n')
     return True
 
