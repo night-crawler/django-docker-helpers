@@ -361,6 +361,16 @@ def env_bool_flag(flag_name: str, strict: bool = False, env: t.Optional[t.Dict[s
     return coerce_str_to_bool(val, strict=strict)
 
 
+def _build_cache_key_for_env(*args, **kwargs) -> str:
+    parts = list(args)
+
+    for k in sorted(kwargs):
+        parts.append(k)
+        parts.append(kwargs[k])
+
+    return ':'.join(map(lambda s: str(s).replace('=', '_'), parts))
+
+
 def run_env_once(f: t.Callable) -> t.Callable:
     """
     A decorator to prevent ``manage.py`` from running code twice for everything.
@@ -372,11 +382,12 @@ def run_env_once(f: t.Callable) -> t.Callable:
 
     @wraps(f)
     def wrapper(*args, **kwargs):
-        has_run = os.environ.get(wrapper.__name__)
+        key = _build_cache_key_for_env(wrapper.__name__, *args, **kwargs)
+        has_run = os.environ.get(key)
         if has_run == '1':
             return
         result = f(*args, **kwargs)
-        os.environ[wrapper.__name__] = '1'
+        os.environ[key] = '1'
         return result
 
     return wrapper
