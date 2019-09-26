@@ -103,7 +103,7 @@ def dot_path(obj: t.Union[t.Dict, object],
     ::
 
         class O1:
-            my_dict = {'a': {'b': 1}}
+            my_dict = {'a': {'b': [1, 2]}}
 
         class O2:
             def __init__(self):
@@ -113,7 +113,7 @@ def dot_path(obj: t.Union[t.Dict, object],
             final = O2()
 
         o = O3()
-        assert utils.dot_path(o, 'final.nested.my_dict.a.b') == 1
+        assert utils.dot_path(o, 'final.nested.my_dict.a.b.1') == 2
 
     .. testoutput::
 
@@ -132,6 +132,11 @@ def dot_path(obj: t.Union[t.Dict, object],
         if isinstance(val, dict):
             val = val.get(item, sentinel)
             if val is sentinel:
+                return default
+        elif isinstance(val, (list, tuple)):
+            try:
+                val = val[int(item)]
+            except (IndexError, TypeError, ValueError):
                 return default
         else:
             val = getattr(val, item, sentinel)
