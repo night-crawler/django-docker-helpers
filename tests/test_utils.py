@@ -2,6 +2,7 @@
 import pytest
 
 import os
+from unittest import mock
 
 from django_docker_helpers import utils
 
@@ -78,6 +79,39 @@ class UtilsTest:
         assert utils.env_bool_flag('test_bool_false', env=_env) is False
 
         assert utils.env_bool_flag('doesnotexist', env=_env) is False
+
+    def test__utils__env_tristate_flag(self):
+        _env = {
+            'test_int_0': 0,
+            'test_int_1': 1,
+            'test_int_2': 2,
+            'test_str_0': '0',
+            'test_str_1': '1',
+            'test_str_2': '2',
+            'test_str_true': 'true',
+            'test_str_false': 'false',
+            'test_bool_true': True,
+            'test_bool_false': False,
+        }
+        assert utils.env_tristate_flag('test_int_0', env=_env) is False
+        assert utils.env_tristate_flag('test_int_1', env=_env) is True
+        assert utils.env_tristate_flag('test_int_2', env=_env) is True
+        with pytest.raises(ValueError):
+            assert utils.env_tristate_flag('test_int_2', strict=True, env=_env)
+
+        assert utils.env_tristate_flag('test_str_0', env=_env) is False
+        assert utils.env_tristate_flag('test_str_1', env=_env) is True
+        assert utils.env_tristate_flag('test_str_2', env=_env) is True
+        with pytest.raises(ValueError):
+            assert utils.env_tristate_flag('test_str_2', strict=True, env=_env)
+
+        assert utils.env_tristate_flag('test_str_true', env=_env) is True
+        assert utils.env_tristate_flag('test_str_false', env=_env) is False
+
+        assert utils.env_tristate_flag('test_bool_true', env=_env) is True
+        assert utils.env_tristate_flag('test_bool_false', env=_env) is False
+
+        assert utils.env_tristate_flag('doesnotexist', env=_env) is None
 
     def test__utils__materialize_dict(self):
         # check yield
@@ -210,3 +244,20 @@ class UtilsTest:
         }
 
         utils.shred_deep(None)
+
+    def test__is_dockerized(self):
+        with mock.patch('os.environ', new={'DOCKERIZED': '1'}):
+            assert utils.is_dockerized()
+
+        with mock.patch('os.environ', new={'DOCKERIZED': '0'}):
+            assert not utils.is_dockerized()
+
+        with mock.patch('os.environ', new={}):
+            with mock.patch('docker_check.checker.is_inside_container', return_value=True):
+                assert utils.is_dockerized()
+
+            with mock.patch('docker_check.checker.is_inside_container', return_value=False):
+                assert not utils.is_dockerized()
+
+            with mock.patch('docker_check.checker.is_inside_container', return_value=None):
+                assert not utils.is_dockerized()

@@ -6,6 +6,7 @@ import typing as t
 from decimal import Decimal
 from functools import wraps
 
+from docker_check import checker as docker_checker
 from dpath.util import get
 from yaml import SafeLoader
 from yaml import dump as dump_yaml
@@ -366,6 +367,27 @@ def env_bool_flag(flag_name: str, strict: bool = False, env: t.Optional[t.Dict[s
     return coerce_str_to_bool(val, strict=strict)
 
 
+def env_tristate_flag(flag_name: str, strict: bool = False, env: t.Optional[t.Dict[str, str]] = None) -> t.Optional[bool]:
+    """
+    Converts an environment variable into a boolean or None if not present. Empty string (presence in env) is treated as ``True``.
+
+    :param flag_name: an environment variable name
+    :param strict: raise ``ValueError`` if a ``flag_name`` value connot be coerced into a boolean in obvious way
+    :param env: a dict with environment variables, default is ``os.environ``
+    :return: ``True`` if ``flag_name`` is thruthy, ``False`` otherwise.
+
+    :raises ValueError: if ``strict`` specified and ``val`` got anything except ``['', 0, 1, true, false, True, False]``
+    """
+    env = env or os.environ
+    sentinel = object()
+    val = env.get(flag_name, sentinel)
+
+    if val is sentinel:
+        return None
+
+    return coerce_str_to_bool(val, strict=strict)
+
+
 def _build_cache_key_for_env(*args, **kwargs) -> str:
     parts = list(args)
 
@@ -398,18 +420,26 @@ def run_env_once(f: t.Callable) -> t.Callable:
     return wrapper
 
 
-def is_dockerized(flag_name: str = 'DOCKERIZED', strict: bool = False):
+def is_dockerized(flag_name: str = 'DOCKERIZED', strict: bool = False) -> bool:
     """
-    Reads env ``DOCKERIZED`` variable as a boolean.
+    Reads env ``DOCKERIZED`` variable as a boolean, or detects docker.
 
     :param flag_name: environment variable name
     :param strict: raise a ``ValueError`` if variable does not look like a normal boolean
     :return: ``True`` if has truthy ``DOCKERIZED`` env, ``False`` otherwise
     """
-    return env_bool_flag(flag_name, strict=strict)
+    flag = env_tristate_flag(flag_name, strict=strict)
+
+    if flag is not None:
+        return flag
+
+    if docker_checker.is_inside_container():
+        return True
+
+    return False
 
 
-def is_production(flag_name: str = 'PRODUCTION', strict: bool = False):
+def is_production(flag_name: str = 'PRODUCTION', strict: bool = False) -> bool:
     """
     Reads env ``PRODUCTION`` variable as a boolean.
 
