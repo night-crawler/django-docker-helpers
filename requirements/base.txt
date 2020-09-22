@@ -1,6 +1,7 @@
 pyaml
 gunicorn
 django
+docker-check
 dpath
 python-consul
 redis
